@@ -202,7 +202,7 @@ function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
 }
 
 function /*void*/ restoreWindow(Struct_Window_targetWindow) {
-    let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_locator;
+    let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
     DOMobj_targetWindow.style.height = Struct_Window_targetWindow.Arr_Int_positionRestore[3] + "px";//restore attributes
     DOMobj_targetWindow.style.width = Struct_Window_targetWindow.Arr_Int_positionRestore[2] + "px";
