@@ -34,7 +34,7 @@ function /*void*/ initDesktop(/*void*/) {
     DOMobj_windowBase.style.left = 0;
     DOMobj_windowBase.style.top = 0;
     let DOMobj_windowBaseDragHandle = document.getElementsByClassName("windowBaseDragHandle")[0];
-    DOMobj_windowBaseDragHandle.onmousedown = function () { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase); };
+    DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase,event); };
 }
 
 function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
@@ -81,9 +81,9 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     DOMobj_windowLocator.setAttribute("style", "top:0;left:0;");
 
     Struct_Window_newWindow.Bool_isMaximized = false;
-    DOMobj_newWindow.onmousedown = function () { if (Struct_Window_newWindow.Int_pileIndex !== 1) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
+    DOMobj_newWindow.onpointerdown = function () { if (Struct_Window_newWindow.Int_pileIndex !== 1) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
     DOMobj_maximizeButton.onclick = function () { changeMaximizeStatus(Struct_Window_newWindow); };
-    DOMobj_dragBox.onmousedown = function () { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow); };//windowDrag
+    DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow,event); };//windowDrag
     DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
 
     Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
@@ -104,18 +104,18 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     return Struct_Window_newWindow;
 }//2024.4.2
 
-function /*void*/ dragWindow(Struct_Window_targetWindow) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
+function /*void*/ dragWindow(Struct_Window_targetWindow,event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
     let DOMobj_SVGfilterEffect = document.getElementById("SVGfilterEffect-window").firstElementChild;
     let Int_moveOriginX = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
     let Int_moveOriginY = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
-    let Int_cursorX = window.event.clientX;
-    let Int_cursorY = window.event.clientY;
+    let Int_cursorX = event.clientX;
+    let Int_cursorY = event.clientY;
 
     let Int_lastTop = Int_moveOriginY;//24.8.18 update motionBlur
     let Int_lastLeft = Int_moveOriginX;
     document.onpointermove = function (event) {
-        let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
-        let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
+        let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
+        let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
         Struct_Window_targetWindow.DOMobj_locator.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
         Struct_Window_targetWindow.DOMobj_locator.style.top = ((Int_top + Int_lastTop) / 2) + "px";
 
@@ -147,8 +147,8 @@ function /*void*/ dragWindow(Struct_Window_targetWindow) {//2024.4.11 copied fro
             Struct_Window_targetWindow.DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
     };
-    document.ondragstart = function () { document.ondragstart.ev.preventDefault(); };
-    document.ondragend = function () { document.ondragend.ev.preventDefault(); };
+    document.ondragstart = function (event) { event.preventDefault(); };
+    document.ondragend = function (event) { event.preventDefault(); };
 }
 
 function /*void*/ dragObject(DOMobj_dragBox, DOMobj_moveTarget) {
@@ -169,8 +169,8 @@ function /*void*/ dragObject(DOMobj_dragBox, DOMobj_moveTarget) {
             DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
     };
-    document.ondragstart = function () { document.ondragstart.ev.preventDefault(); };
-    document.ondragend = function () { document.ondragend.ev.preventDefault(); };
+    document.ondragstart = function (event) { event.preventDefault(); };
+    document.ondragend = function (event) { event.preventDefault(); };
 }
 
 function /*void*/ changeMaximizeStatus(Struct_Window_window) {
@@ -232,13 +232,13 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow = null;//free the memory
 }
 
-function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from function “dragObject” and customized for desktop QwQ
+function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget,event) {//copied from function “dragObject” and customized for desktop QwQ
     let DOMobj_SVGfilterEffect_desktop = document.getElementById("SVGfilterEffect-windowBaseDragHandle").firstElementChild;
     let DOMobj_SVGfilterEffect_window = document.getElementById("SVGfilterEffect-window").firstElementChild;
     let Int_moveOriginX = parseInt(DOMobj_moveTarget.style.left);
     let Int_moveOriginY = parseInt(DOMobj_moveTarget.style.top);
-    let Int_cursorX = window.event.clientX;
-    let Int_cursorY = window.event.clientY;
+    let Int_cursorX = event.clientX;
+    let Int_cursorY = event.clientY;
 
     let Int_lastTop = Int_moveOriginY;//24.8.17 update motionBlur
     let Int_lastLeft = Int_moveOriginX;
@@ -247,9 +247,9 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from 
     for (let Int_i = 0; Int_i < Int_len; Int_i++) {
         Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";//初始化
     }
-    document.onpointermove = function () {
-        let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
-        let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
+    document.onpointermove = function (event) {
+        let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
+        let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
         DOMobj_moveTarget.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
         DOMobj_moveTarget.style.top = ((Int_top + Int_lastTop) / 2) + "px";//加完了，这下舒服了，真绕了好多弯子啊
         //写，必须写！不写偏移观感一坨史！24.8.18 
@@ -267,8 +267,8 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from 
     };
     document.onpointerup = function (event) {
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, 0, 0, 0, 0);//clear blur
-        let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
-        let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
+        let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
+        let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
         DOMobj_moveTarget.style.left = Int_left + "px";
         DOMobj_moveTarget.style.top = Int_top + "px";//2024.8.17 update: to add feature "motionBlur" update the position at the end of the drag  YCH
         updateWindowBackground(DOMobj_dragBox, Int_left, Int_top);//let grid align with the pixels(int -> float 强制类型转换)
@@ -287,8 +287,8 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from 
             DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
     };
-    document.ondragstart = function () { document.ondragstart.ev.preventDefault(); };
-    document.ondragend = function () { document.ondragend.ev.preventDefault(); };
+    document.ondragstart = function (event) { event.preventDefault(); };
+    document.ondragend = function (event) { event.preventDefault(); };
 }
 
 function /*void*/ updateWindowBackground(DOMobj_target, Float_X, Float_Y) {//24.8.17 blur update: coord Int->Float
