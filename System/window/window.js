@@ -113,7 +113,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow) {//2024.4.11 copied fro
 
     let Int_lastTop = Int_moveOriginY;//24.8.18 update motionBlur
     let Int_lastLeft = Int_moveOriginX;
-    document.onmousemove = function () {
+    document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
         Struct_Window_targetWindow.DOMobj_locator.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
@@ -125,7 +125,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow) {//2024.4.11 copied fro
         Int_lastTop = Int_top;
         Int_lastLeft = Int_left;
     };
-    document.onmouseup = function () {
+    document.onpointerup = function (event) {
         Struct_Window_targetWindow.DOMobj_locator.style.left = Int_lastLeft + "px";
         Struct_Window_targetWindow.DOMobj_locator.style.top = Int_lastTop + "px";
         updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, 0, 0, 0, 0);
@@ -141,10 +141,10 @@ function /*void*/ dragWindow(Struct_Window_targetWindow) {//2024.4.11 copied fro
         ];//save restore attributes
         moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow);//adjust window cover status (added by YCH 2024.6.4)
         //why movewindowtothetopofitsindecxgrooup... is useless? bug report 2024.6.4
-        document.onmouseup = null;
-        document.onmousemove = null;
-        if (typeof (Struct_Window_targetWindow.DOMobj_dragBox.releaseCapture) != "undefined") {
-            Struct_Window_targetWindow.DOMobj_dragBox.releaseCapture();
+        document.onpointerup = null;
+        document.onpointermove = null;
+        if (typeof (Struct_Window_targetWindow.DOMobj_dragBox.releasePointerCapture) != "undefined") {
+            Struct_Window_targetWindow.DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
     };
     document.ondragstart = function () { document.ondragstart.ev.preventDefault(); };
@@ -156,17 +156,17 @@ function /*void*/ dragObject(DOMobj_dragBox, DOMobj_moveTarget) {
     let Int_moveOriginY = parseInt(DOMobj_moveTarget.style.top);
     let Int_cursorX = window.event.clientX;
     let Int_cursorY = window.event.clientY;
-    document.onmousemove = function () {
+    document.onpointermove = function () {
         let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
         DOMobj_moveTarget.style.left = Int_left + "px";
         DOMobj_moveTarget.style.top = Int_top + "px";
     };
-    document.onmouseup = function () {
-        document.onmouseup = null;
-        document.onmousemove = null;
-        if (typeof (DOMobj_dragBox.releaseCapture) != "undefined") {
-            DOMobj_dragBox.releaseCapture();
+    document.onpointerup = function (event) {
+        document.onpointerup = null;
+        document.onpointermove = null;
+        if (typeof (DOMobj_dragBox.releasePointerCapture) != "undefined") {
+            DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
     };
     document.ondragstart = function () { document.ondragstart.ev.preventDefault(); };
@@ -247,7 +247,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from 
     for (let Int_i = 0; Int_i < Int_len; Int_i++) {
         Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";//初始化
     }
-    document.onmousemove = function () {
+    document.onpointermove = function () {
         let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
         DOMobj_moveTarget.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
@@ -265,7 +265,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from 
         Int_lastTop = Int_top;
         Int_lastLeft = Int_left;
     };
-    document.onmouseup = function () {
+    document.onpointerup = function (event) {
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, 0, 0, 0, 0);//clear blur
         let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
@@ -281,10 +281,10 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget) {//copied from 
             Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
         }
 
-        document.onmouseup = null;
-        document.onmousemove = null;
-        if (typeof (DOMobj_dragBox.releaseCapture) != "undefined") {
-            DOMobj_dragBox.releaseCapture();
+        document.onpointerup = null;
+        document.onpointermove = null;
+        if (typeof (DOMobj_dragBox.releasePointerCapture) != "undefined") {
+            DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
     };
     document.ondragstart = function () { document.ondragstart.ev.preventDefault(); };
