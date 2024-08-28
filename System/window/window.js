@@ -228,7 +228,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
 
     Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
-    Struct_Window_targetWindow.DOMobj_frame.remove();//remove from DOM
+    Struct_Window_targetWindow.DOMobj_locator.remove();//remove from DOM
     Struct_Window_targetWindow = null;//free the memory
 }
 
