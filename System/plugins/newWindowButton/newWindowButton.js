@@ -1,20 +1,26 @@
-function/* void */ newWindowButton(/* void */) {
-    // 获取DOM元素
-    const windowBase = document.getElementsByClassName('windowBase')[0];
-    // 创建按钮元素
-    const button = document.createElement('button');
+function newWindowButton() {
+  // 获取DOM元素
+  const windowBase = document.getElementsByClassName("windowBase")[0];
 
-    // 给按钮添加属性
-    button.classList.add('newWindowButton');
-    button.name = 'button';
-    button.innerHTML = '创建窗口';
+  // 创建按钮元素
+  const button = document.createElement("button");
 
-    // 追加按钮至windowBase的子节点
-    windowBase.insertBefore(button, windowBase.children[0]);
+  // 给按钮添加属性
+  button.classList.add("newWindowButton");
+  button.name = "button";
+  button.textContent = "创建窗口";
+  // 使用textContent代替innerHTML，textContent在设置纯文本内容时更为安全且性能更好
 
-    // 给按钮增加侦听事件并回调initWindow函数创建窗口
-    button.addEventListener('click', initWindow);
-} newWindowButton();
+  // 追加按钮至windowBase的子节点
+  windowBase.insertBefore(button, windowBase.firstChild || null);
+  // 使用firstChild代替children[0]，因为firstChild的访问速度更快
+
+  // 给按钮增加侦听事件并回调initWindow函数创建窗口
+  button.addEventListener("click", initWindow);
+}
+
+// 调用函数
+newWindowButton();
 
 /* console.time('qs');
 for (let i = 0; i <= 1000000;i++){
