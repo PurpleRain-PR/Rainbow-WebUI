@@ -13,7 +13,7 @@ function/* void */ newWindowButton(/* void */) {
     windowBase.insertBefore(button, windowBase.children[0]);
 
     // 给按钮增加侦听事件并回调initWindow函数创建窗口
-    button.addEventListener('click', initWindow);
+    button.addEventListener('click', function () { initWindow(0, 0, 0, 0); });
 } newWindowButton();
 
 /* console.time('qs');
