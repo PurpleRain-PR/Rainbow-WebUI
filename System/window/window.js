@@ -34,7 +34,7 @@ function /*void*/ initDesktop(/*void*/) {
     DOMobj_windowBase.style.left = 0;
     DOMobj_windowBase.style.top = 0;
     let DOMobj_windowBaseDragHandle = document.getElementsByClassName("windowBaseDragHandle")[0];
-    DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase,event); };
+    DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase, event); };
 }
 
 function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
@@ -83,7 +83,7 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     Struct_Window_newWindow.Bool_isMaximized = false;
     DOMobj_newWindow.onpointerdown = function () { if (Struct_Window_newWindow.Int_pileIndex !== 1) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
     DOMobj_maximizeButton.onclick = function () { changeMaximizeStatus(Struct_Window_newWindow); };
-    DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow,event); };//windowDrag
+    DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
 
     Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
@@ -92,19 +92,27 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     // Struct_Window_newWindow.Int_pileIndex = 1;
     DOMobj_maximizeButton.innerHTML = String(Struct_Window_newWindow.Int_handle);//Debug Config
 
-    Struct_Window_newWindow.Arr_Int_positionRestore = [
+    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_newWindow.DOMobj_locator.style.top);
+    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_newWindow.DOMobj_locator.style.left);
+    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_width = 60;/*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
+    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_height = 30;//save attributes for the first time
+
+    /*Struct_Window_newWindow.Arr_Int_positionRestore = [
         parseInt(Struct_Window_newWindow.DOMobj_locator.style.top),
         parseInt(Struct_Window_newWindow.DOMobj_locator.style.left),
         60,
-        30/*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
-    ];//save attributes for the first time
+        30
+    ];*/
+    //old
+    //isWindowOverlap还没改！！
+
     console.log(Struct_Window_newWindow.Arr_Int_positionRestore);//debug config
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
 
     return Struct_Window_newWindow;
 }//2024.4.2
 
-function /*void*/ dragWindow(Struct_Window_targetWindow,event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
+function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
     let DOMobj_SVGfilterEffect = document.getElementById("SVGfilterEffect-window").firstElementChild;
     let Int_moveOriginX = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
     let Int_moveOriginY = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
@@ -133,6 +141,10 @@ function /*void*/ dragWindow(Struct_Window_targetWindow,event) {//2024.4.11 copi
         Struct_Window_targetWindow.DOMobj_frame.style.transform = "";
 
         Struct_Window_targetWindow.DOMobj_locator.style.filter = "";
+        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
+        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
+        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
+        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
         Struct_Window_targetWindow.Arr_Int_positionRestore = [
             parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top),
             parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left),
@@ -185,6 +197,10 @@ function /*void*/ changeMaximizeStatus(Struct_Window_window) {
 function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
     Struct_Window_targetWindow.Arr_Int_positionRestore = [
         parseInt(DOMobj_targetWindow.style.top),
         parseInt(DOMobj_targetWindow.style.left),
@@ -204,10 +220,10 @@ function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
 function /*void*/ restoreWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
-    DOMobj_targetWindow.style.height = Struct_Window_targetWindow.Arr_Int_positionRestore[3] + "px";//restore attributes
-    DOMobj_targetWindow.style.width = Struct_Window_targetWindow.Arr_Int_positionRestore[2] + "px";
-    DOMobj_targetWindow.style.left = Struct_Window_targetWindow.Arr_Int_positionRestore[1] + "px";
-    DOMobj_targetWindow.style.top = Struct_Window_targetWindow.Arr_Int_positionRestore[0] + "px";
+    Struct_Window_targetWindow.DOMobj_frame.style.height = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height + "px";//restore attributes
+    Struct_Window_targetWindow.DOMobj_frame.style.width = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width + "px";
+    Struct_Window_targetWindow.DOMobj_locator.style.left = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left + "px";
+    Struct_Window_targetWindow.DOMobj_locator.style.top = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top + "px";
 
     DOMobj_targetWindow.setAttribute("class", "window");
     Struct_Window_targetWindow.Bool_isMaximized = false;
@@ -232,7 +248,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow = null;//free the memory
 }
 
-function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget,event) {//copied from function “dragObject” and customized for desktop QwQ
+function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copied from function “dragObject” and customized for desktop QwQ
     let DOMobj_SVGfilterEffect_desktop = document.getElementById("SVGfilterEffect-windowBaseDragHandle").firstElementChild;
     let DOMobj_SVGfilterEffect_window = document.getElementById("SVGfilterEffect-window").firstElementChild;
     let Int_moveOriginX = parseInt(DOMobj_moveTarget.style.left);
@@ -276,8 +292,8 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget,event) {//copied
             updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, 0, 0, 0, 0);
             Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
             Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.left = Arr_Struct_Window_allWindows[Int_i].Arr_Int_positionRestore[1] + "px";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.top = Arr_Struct_Window_allWindows[Int_i].Arr_Int_positionRestore[0] + "px";
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.left = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_left + "px";
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.top = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_top + "px";
             Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
         }
 
