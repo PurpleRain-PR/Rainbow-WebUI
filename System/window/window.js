@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 //sturcts
 function /*Struct_Window*/ Struct_Window() {
     this.Int_handle = undefined;
