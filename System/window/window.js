@@ -106,7 +106,8 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     //old
     //isWindowOverlap还没改！！
 
-    console.log(Struct_Window_newWindow.Arr_Int_positionRestore);//debug config
+    //console.log(Struct_Window_newWindow.Arr_Int_positionRestore);//debug config
+
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
 
     return Struct_Window_newWindow;
@@ -393,6 +394,7 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
 }//2024.4.11
 
 function /*Bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
+    /*
     console.log(Struct_Window_window1.Arr_Int_positionRestore);
     console.log(Struct_Window_window2.Arr_Int_positionRestore);
     //BIGBUG
@@ -404,7 +406,9 @@ function /*Bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) 
         Struct_Window_window1.Arr_Int_positionRestore[0] >= (Struct_Window_window2.Arr_Int_positionRestore[0] + Struct_Window_window2.Arr_Int_positionRestore[3])
         || Struct_Window_window2.Arr_Int_positionRestore[0] >= (Struct_Window_window1.Arr_Int_positionRestore[0] + Struct_Window_window1.Arr_Int_positionRestore[3])
     );
-    return Bool_xOverlap && Bool_yOverlap;
+    return Bool_xOverlap && Bool_yOverlap;*/
+    //old
+    return (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);
 }//2024.4.15
 
 function /*Bool*/ isWindowInScreen(Struct_Window_window) {
@@ -423,6 +427,19 @@ function /*void*/ uncoverWindow(Struct_Window_targetWindow) {
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_targetWindow) {
 
+}
+
+function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
+    let Struct_StdWindowRect_rect1 = Struct_Window_window1.Struct_StdWindowRect_windowRect;
+    let Struct_StdWindowRect_rect2 = Struct_Window_window2.Struct_StdWindowRect_windowRect;
+    let Int_right1 = Struct_StdWindowRect_rect1.Int_left + Struct_StdWindowRect_rect1.Int_width;
+    let Int_right2 = Struct_StdWindowRect_rect2.Int_left + Struct_StdWindowRect_rect2.Int_width;
+    let Int_bottom1 = Struct_StdWindowRect_rect1.Int_top + Struct_StdWindowRect_rect1.Int_height;
+    let Int_bottom2 = Struct_StdWindowRect_rect2.Int_top + Struct_StdWindowRect_rect2.Int_height;
+    let Int_dx = Math.max(Struct_StdWindowRect_rect1.Int_left - Int_right2, Struct_StdWindowRect_rect2.Int_left - Int_right1);
+    let Int_dy = Math.max(Struct_StdWindowRect_rect1.Int_top - Int_bottom2, Struct_StdWindowRect_rect2.Int_top - Int_bottom1);
+    if (Int_dx > 0 && Int_dy > 0) { return Int_dx + Int_dy; }
+    return Math.max(Int_dx, Int_dy);
 }
 
 function /*void*/ updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffectContainer, Int_lastX, Int_lastY, Int_nextX, Int_nextY) {//window背景的运动模糊比较特殊，因为是只有横竖的方格图案，所以不用转换成单一方向再模糊（SVGfilter只支持横纵两个方向的模糊）
