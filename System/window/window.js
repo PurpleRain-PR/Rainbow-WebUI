@@ -97,17 +97,6 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_width = 60;/*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
     Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_height = 30;//save attributes for the first time
 
-    /*Struct_Window_newWindow.Arr_Int_positionRestore = [
-        parseInt(Struct_Window_newWindow.DOMobj_locator.style.top),
-        parseInt(Struct_Window_newWindow.DOMobj_locator.style.left),
-        60,
-        30
-    ];*/
-    //old
-    //isWindowOverlap还没改！！
-
-    //console.log(Struct_Window_newWindow.Arr_Int_positionRestore);//debug config
-
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
 
     return Struct_Window_newWindow;
@@ -146,12 +135,8 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
         Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
         Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
         Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
-        Struct_Window_targetWindow.Arr_Int_positionRestore = [
-            parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top),
-            parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left),
-            parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width),
-            parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height)/*save attribute copied from function "maximizeWindow" 2024.4.11 */
-        ];//save restore attributes
+        /*save attribute copied from function "maximizeWindow" 2024.4.11 */
+        //save restore attributes
         moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow);//adjust window cover status (added by YCH 2024.6.4)
         //why movewindowtothetopofitsindecxgrooup... is useless? bug report 2024.6.4
         document.onpointerup = null;
@@ -202,12 +187,8 @@ function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
     Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
     Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
-    Struct_Window_targetWindow.Arr_Int_positionRestore = [
-        parseInt(DOMobj_targetWindow.style.top),
-        parseInt(DOMobj_targetWindow.style.left),
-        parseInt(DOMobj_targetWindow.style.width),
-        parseInt(DOMobj_targetWindow.style.height)/*bug fixed 2024.4.11 style.something is ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
-    ];//save restore attributes
+    /*bug fixed 2024.4.11 style.something is ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
+    //save restore attributes
 
     DOMobj_targetWindow.style.height = "";//clear attributes
     DOMobj_targetWindow.style.width = "";
@@ -394,20 +375,6 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
 }//2024.4.11
 
 function /*Bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
-    /*
-    console.log(Struct_Window_window1.Arr_Int_positionRestore);
-    console.log(Struct_Window_window2.Arr_Int_positionRestore);
-    //BIGBUG
-    let Bool_xOverlap = !(
-        Struct_Window_window1.Arr_Int_positionRestore[1] >= (Struct_Window_window2.Arr_Int_positionRestore[1] + Struct_Window_window2.Arr_Int_positionRestore[2])
-        || Struct_Window_window2.Arr_Int_positionRestore[1] >= (Struct_Window_window1.Arr_Int_positionRestore[1] + Struct_Window_window1.Arr_Int_positionRestore[2])
-    );
-    let Bool_yOverlap = !(
-        Struct_Window_window1.Arr_Int_positionRestore[0] >= (Struct_Window_window2.Arr_Int_positionRestore[0] + Struct_Window_window2.Arr_Int_positionRestore[3])
-        || Struct_Window_window2.Arr_Int_positionRestore[0] >= (Struct_Window_window1.Arr_Int_positionRestore[0] + Struct_Window_window1.Arr_Int_positionRestore[3])
-    );
-    return Bool_xOverlap && Bool_yOverlap;*/
-    //old
     return (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);
 }//2024.4.15
 
@@ -425,8 +392,35 @@ function /*void*/ uncoverWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_cover.style.left = "-100%";//uncover the window
 }
 
-function /*int*/ queryWindowOverlapStatus(Struct_Window_targetWindow) {
+function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
+    if (Struct_Window_window1.Int_handle === Struct_Window_window2.Int_handle) { return 0; }
+    let Int_HandleL = undefined;
+    let Int_HandleS = undefined;
+    if (Struct_Window_window1.Int_handle > Struct_Window_window2.Int_handle) {
+        Int_HandleL = Struct_Window_window1.Int_handle;
+        Int_HandleS = Struct_Window_window2.Int_handle;
+    }
+    else {
+        Int_HandleL = Struct_Window_window2.Int_handle;
+        Int_HandleL = Struct_Window_window1.Int_handle;
+    }
+    return Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1];
+}
 
+function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
+    if (Struct_Window_window1.Int_handle === Struct_Window_window2.Int_handle) { return 0; }
+    let Int_HandleL = undefined;
+    let Int_HandleS = undefined;
+    if (Struct_Window_window1.Int_handle > Struct_Window_window2.Int_handle) {
+        Int_HandleL = Struct_Window_window1.Int_handle;
+        Int_HandleS = Struct_Window_window2.Int_handle;
+    }
+    else {
+        Int_HandleL = Struct_Window_window2.Int_handle;
+        Int_HandleL = Struct_Window_window1.Int_handle;
+    }
+    return (Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1] = calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2));
+    //数组扩容还没写！！！
 }
 
 function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
