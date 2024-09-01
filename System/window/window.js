@@ -86,16 +86,16 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
 
-    Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
-    Struct_Window_newWindow.Int_handle = distributeWindowHandle();
-    Struct_Window_newWindow.Int_indexOfPileIndex = 1;//Debug Config
-    // Struct_Window_newWindow.Int_pileIndex = 1;
-    DOMobj_maximizeButton.innerHTML = String(Struct_Window_newWindow.Int_handle);//Debug Config
-
     Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_newWindow.DOMobj_locator.style.top);
     Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_newWindow.DOMobj_locator.style.left);
     Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_width = 60;/*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
     Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_height = 30;//save attributes for the first time
+
+    Struct_Window_newWindow.Int_handle = distributeWindowHandle();
+    addWindowToGWOP(Struct_Window_newWindow.Int_handle);
+    Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
+    Struct_Window_newWindow.Int_indexOfPileIndex = 1;//Debug Config
+    DOMobj_maximizeButton.innerHTML = String(Struct_Window_newWindow.Int_handle);//Debug Config
 
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
 
@@ -224,7 +224,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
             }
         }
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
-
+    removeWindowFromGWOP(Struct_Window_targetWindow.Int_handle);
     Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
     Struct_Window_targetWindow.DOMobj_locator.remove();//remove from DOM
     Struct_Window_targetWindow = null;//free the memory
@@ -348,7 +348,7 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
             }//find the last on-top window in the group
             if (Struct_Window_targetWindow.Int_pileIndex === undefined || (Arr_Struct_Window_allWindows[Int_i]).Int_pileIndex < Struct_Window_targetWindow.Int_pileIndex) {//to only adjust the index before the target (bug discovered and fixed on 2024.4.10)//initwindow dont have index(undefined) bug fixed on 2024.4.10
                 (Arr_Struct_Window_allWindows[Int_i]).Int_pileIndex++;//adjust the index
-                if (Struct_Window_targetWindow.Arr_Int_positionRestore !== undefined && isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window
+                if (Struct_Window_targetWindow.Struct_StdWindowRect_windowRect !== undefined && isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window
                     coverWindow(Arr_Struct_Window_allWindows[Int_i]);
                 }
             }
@@ -385,13 +385,13 @@ function /*Bool*/ isWindowInScreen(Struct_Window_window) {
 function /*void*/ coverWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_cover.style.left = "0";
     Struct_Window_targetWindow.DOMobj_cover.style.top = "0";
-    Struct_Window_targetWindow.DOMobj_cover.style.display = "";
+    //Struct_Window_targetWindow.DOMobj_cover.style.display = "";
 }
 
 function /*void*/ uncoverWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_cover.style.top = "-100%";
     Struct_Window_targetWindow.DOMobj_cover.style.left = "-100%";//uncover the window
-    Struct_Window_targetWindow.DOMobj_cover.style.display = "none";
+    //Struct_Window_targetWindow.DOMobj_cover.style.display = "none";
 }
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
@@ -422,7 +422,6 @@ function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_
         Int_handleL = Struct_Window_window1.Int_handle;
     }
     return (Arr_Int_globalWindowOverlapTable[((Int_handleL - 1) * (Int_handleL - 2) >> 1) + Int_handleS - 1] = calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2));
-    //数组扩容还没写！！！
 }
 
 function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
@@ -453,12 +452,17 @@ function /*void*/ updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGf
     DOMobj_SVGfilterEffectContainer.setAttribute("stdDeviation", Float_distance / 2 + ",0");
 }
 
-function /*void*/ addWindowToGWOP(Int_targetHandle) {
-
+function /*void*/ addWindowToGWOP(Int_targetHandle) {//请务必在把window添加到allWindows中之前先调用我，否则如果要添加的窗口刚好是最大handle则不会正确扩充表
+    let Int_maxHandle = getMaxHandle();
+    if (Int_targetHandle >= Int_maxHandle) {
+        extendGWOP((Int_targetHandle * (Int_targetHandle - 1) >> 1) - (Int_maxHandle * (Int_maxHandle - 1) >> 1));
+    }
 }
 
 function /*void*/ removeWindowFromGWOP(Int_targetHandle) {
-
+    if (Int_targetHandle === getMaxHandle()) {
+        shrinkGWOP(Int_targetHandle - 1);
+    }
 }
 
 function /*void*/ extendGWOP(Int_n) {
