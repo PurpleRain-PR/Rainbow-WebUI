@@ -453,6 +453,34 @@ function /*void*/ updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGf
     DOMobj_SVGfilterEffectContainer.setAttribute("stdDeviation", Float_distance / 2 + ",0");
 }
 
+function /*void*/ addWindowToGWOP(Int_targetHandle) {
+
+}
+
+function /*void*/ removeWindowFromGWOP(Int_targetHandle) {
+
+}
+
+function /*void*/ extendGWOP(Int_n) {
+
+}
+
+function /*void*/ shrinkGWOP(Int_n) {
+
+}
+
+function /*void*/ refreshGWOP(/*void*/) {
+
+}
+
+function /*void*/ updateAllOverlapStatusOfWindow(Int_targetHandle) {
+
+}
+
+function /*int*/ getMaxHandle(/*void*/) {
+    return undefined;
+}
+
 //Debug Configs
 var i = initWindow;
 var a = getWindowByHandle;
