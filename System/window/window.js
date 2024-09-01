@@ -462,11 +462,15 @@ function /*void*/ removeWindowFromGWOP(Int_targetHandle) {
 }
 
 function /*void*/ extendGWOP(Int_n) {
-
+    while (Int_n > 0) {
+        Arr_Int_globalWindowOverlapTable.push(0);
+    }
 }
 
 function /*void*/ shrinkGWOP(Int_n) {
-
+    while (Int_n > 0) {
+        Arr_Int_globalWindowOverlapTable.pop();
+    }
 }
 
 function /*void*/ refreshGWOP(/*void*/) {
