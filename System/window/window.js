@@ -385,11 +385,13 @@ function /*Bool*/ isWindowInScreen(Struct_Window_window) {
 function /*void*/ coverWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_cover.style.left = "0";
     Struct_Window_targetWindow.DOMobj_cover.style.top = "0";
+    Struct_Window_targetWindow.DOMobj_cover.style.display = "";
 }
 
 function /*void*/ uncoverWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_cover.style.top = "-100%";
     Struct_Window_targetWindow.DOMobj_cover.style.left = "-100%";//uncover the window
+    Struct_Window_targetWindow.DOMobj_cover.style.display = "none";
 }
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
