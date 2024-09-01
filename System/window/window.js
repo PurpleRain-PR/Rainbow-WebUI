@@ -411,17 +411,17 @@ function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_w
 
 function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
     if (Struct_Window_window1.Int_handle === Struct_Window_window2.Int_handle) { return 0; }
-    let Int_HandleL = undefined;
-    let Int_HandleS = undefined;
+    let Int_handleL = undefined;
+    let Int_handleS = undefined;
     if (Struct_Window_window1.Int_handle > Struct_Window_window2.Int_handle) {
-        Int_HandleL = Struct_Window_window1.Int_handle;
-        Int_HandleS = Struct_Window_window2.Int_handle;
+        Int_handleL = Struct_Window_window1.Int_handle;
+        Int_handleS = Struct_Window_window2.Int_handle;
     }
     else {
-        Int_HandleL = Struct_Window_window2.Int_handle;
-        Int_HandleL = Struct_Window_window1.Int_handle;
+        Int_handleL = Struct_Window_window2.Int_handle;
+        Int_handleL = Struct_Window_window1.Int_handle;
     }
-    return (Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1] = calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2));
+    return (Arr_Int_globalWindowOverlapTable[((Int_handleL - 1) * (Int_handleL - 2) >> 1) + Int_handleS - 1] = calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2));
     //数组扩容还没写！！！
 }
 
@@ -478,7 +478,12 @@ function /*void*/ updateAllOverlapStatusOfWindow(Int_targetHandle) {
 }
 
 function /*int*/ getMaxHandle(/*void*/) {
-    return undefined;
+    if (Arr_Struct_Window_allWindows.length === 0) { return 0; }
+    let Int_maxHandle = 1;
+    for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
+        Int_maxHandle = Arr_Struct_Window_allWindows[Int_i].Int_handle > Int_maxHandle ? Arr_Struct_Window_allWindows[Int_i].Int_handle : Int_maxHandle;//math.max速度低于三目运算符，下次把calculateOverlapStatus那里的也换掉
+    }
+    return Int_maxHandle;
 }
 
 //Debug Configs
