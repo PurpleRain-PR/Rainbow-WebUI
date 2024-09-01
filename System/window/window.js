@@ -375,7 +375,7 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
 }//2024.4.11
 
 function /*Bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
-    return (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);
+    return (updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);
 }//2024.4.15
 
 function /*Bool*/ isWindowInScreen(Struct_Window_window) {
@@ -404,7 +404,7 @@ function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_w
     }
     else {
         Int_HandleL = Struct_Window_window2.Int_handle;
-        Int_HandleL = Struct_Window_window1.Int_handle;
+        Int_HandleS = Struct_Window_window1.Int_handle;
     }
     return Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1];
 }
@@ -419,7 +419,7 @@ function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_
     }
     else {
         Int_handleL = Struct_Window_window2.Int_handle;
-        Int_handleL = Struct_Window_window1.Int_handle;
+        Int_handleS = Struct_Window_window1.Int_handle;
     }
     return (Arr_Int_globalWindowOverlapTable[((Int_handleL - 1) * (Int_handleL - 2) >> 1) + Int_handleS - 1] = calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2));
 }
