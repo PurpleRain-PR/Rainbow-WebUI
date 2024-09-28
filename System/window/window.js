@@ -27,10 +27,11 @@ function /*Struct_StdWindowRect*/ Struct_StdWindowRect() {//代替Arr_Int[4]型�
 //global variables
 var Arr_Struct_Window_allWindows/*for system only*/ = new Array();
 var Arr_Int_globalWindowOverlapTable/*for system only*/ = new Array();
+var DOMobj_windowBase/*for system only*/ = undefined;//调用initDesktop后才赋值
 
 //functions
 function /*void*/ initDesktop(/*void*/) {
-    let DOMobj_windowBase = document.getElementsByClassName("windowBase")[0];//get windowbase
+    DOMobj_windowBase = document.getElementsByClassName("windowBase")[0];//get windowbase
     DOMobj_windowBase.style.left = 0;
     DOMobj_windowBase.style.top = 0;
     let DOMobj_windowBaseDragHandle = document.getElementsByClassName("windowBaseDragHandle")[0];
@@ -114,11 +115,24 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
-        Struct_Window_targetWindow.DOMobj_locator.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
-        Struct_Window_targetWindow.DOMobj_locator.style.top = ((Int_top + Int_lastTop) / 2) + "px";
+        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = Int_top;
+        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = Int_left;
+        if (isWindowInScreen(Struct_Window_targetWindow)) {//在窗口内才更新运动模糊
+            Struct_Window_targetWindow.DOMobj_locator.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
+            Struct_Window_targetWindow.DOMobj_locator.style.top = ((Int_top + Int_lastTop) / 2) + "px";
 
-        Struct_Window_targetWindow.DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
-        updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, Int_lastLeft, Int_lastTop, Int_left, Int_top);
+            Struct_Window_targetWindow.DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
+            updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, Int_lastLeft, Int_lastTop, Int_left, Int_top);
+        }
+        else {
+            Struct_Window_targetWindow.DOMobj_locator.style.left = Int_left + "px";
+            Struct_Window_targetWindow.DOMobj_locator.style.top = Int_top + "px";
+
+            updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, 0, 0, 0, 0);
+            Struct_Window_targetWindow.DOMobj_locator.style.transform = "";
+            Struct_Window_targetWindow.DOMobj_frame.style.transform = "";
+            Struct_Window_targetWindow.DOMobj_locator.style.filter = "";
+        }
 
         Int_lastTop = Int_top;
         Int_lastLeft = Int_left;
@@ -241,10 +255,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
     let Int_lastTop = Int_moveOriginY;//24.8.17 update motionBlur
     let Int_lastLeft = Int_moveOriginX;
 
-    let Int_len = Arr_Struct_Window_allWindows.length;
-    for (let Int_i = 0; Int_i < Int_len; Int_i++) {
-        Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";//初始化
-    }
+    let Int_len = Arr_Struct_Window_allWindows.length;//等会遍历窗口用
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
@@ -258,7 +269,15 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, Int_lastTop, Int_lastLeft, Int_top, Int_left);
 
         for (let Int_i = 0; Int_i < Int_len; Int_i++) {
-            updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, Int_lastLeft, Int_lastTop, Int_left, Int_top);//update all windows' blur effect
+            if (isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//在屏幕内才更新
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
+                updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, Int_lastLeft, Int_lastTop, Int_left, Int_top);//update all windows' blur effect
+            }
+            else {
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
+            }
         }//这里因为把窗口位置放在两次移动点中间麻烦，就没写了，直接没有偏移窗口位置，看看观感再说吧 24.8.18YCH
         Int_lastTop = Int_top;
         Int_lastLeft = Int_left;
@@ -379,7 +398,11 @@ function /*Bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) 
 }//2024.4.15
 
 function /*Bool*/ isWindowInScreen(Struct_Window_window) {
-    return false;//WIP
+    let Int_screenLeft = parseInt(DOMobj_windowBase.style.left) + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_left;
+    let Int_screenRight = Int_screenLeft + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_width;
+    let Int_screenTop = parseInt(DOMobj_windowBase.style.top) + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_top;
+    let Int_screenBottom = Int_screenTop + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_height;
+    return !((Int_screenRight < 0 || Int_screenLeft > innerWidth) || (Int_screenBottom < 0 || Int_screenTop > innerHeight));
 }
 
 function /*void*/ coverWindow(Struct_Window_targetWindow) {
