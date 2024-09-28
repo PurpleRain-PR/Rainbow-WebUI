@@ -10,7 +10,7 @@
   <link rel="stylesheet" type="text/css" href="./System/plugins/newWindowButton/newWindowButton.css">
   <svg class="SVGfilterEffectContainer" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <filter id="SVGfilterEffect-windowBaseDragHandle" x="-5%" y="-5%" width="110%" height="110%">
+      <filter id="SVGfilterEffect-windowBaseDragHandle" x="0" y="0" width="100%" height="100%">
         <feGaussianBlur result="blurResult" in="offsetResult" stdDeviation="0,0" />
       </filter>
       <filter id="SVGfilterEffect-window" x="-200%" y="-200%" width="500%" height="500%">
@@ -20,11 +20,13 @@
   </svg>
 </head>
 
-<body onload="initDesktop();">
+<body onload="systemMain();">
+  <script src="./System/kernel.js"></script>
+  <script src="./System/window/window.js"></script>
+  <script src="./System/plugins/newWindowButton/newWindowButton.js"></script>
 
   <div class="windowBaseDragHandle"></div>
   <div class="windowBase"></div>
-  <script src="./System/window/window.js"></script>
-  <script src="./System/plugins/newWindowButton/newWindowButton.js"></script>
 </body>
+
 </html>

@@ -21,7 +21,8 @@ function newWindowButton() {
 }
 
 // 调用函数
-newWindowButton();
+//newWindowButton();
+// 杂鱼HZ,不准流程外调用 YCH
 
 /* console.time('qs');
 for (let i = 0; i <= 1000000;i++){
