@@ -3,6 +3,7 @@
 "use strict";
 
 function /*int*/ systemMain() {
+    document.body.onload = null;
     initDesktop();
 
     newWindowButton();//debug
