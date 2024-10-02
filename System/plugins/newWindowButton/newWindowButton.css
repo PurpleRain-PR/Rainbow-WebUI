@@ -1,5 +1,10 @@
 .newWindowButton {
     background-image: linear-gradient(to right, #2b5876 0%, #4e4376 51%, #2b5876 100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 150px;
+    height: 150px;
     margin: 10px;
     padding: 15px 45px;
     text-align: center;

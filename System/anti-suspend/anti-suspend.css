@@ -1,0 +1,37 @@
+.startCover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: alias;
+}
+
+@keyframes startCover-disappear {
+    0% {
+        backdrop-filter: blur(200px);
+        opacity: 1;
+    }
+
+    75% {
+        opacity: 1;
+    }
+
+    100% {
+        backdrop-filter: blur(0px);
+        opacity: 0;
+    }
+}
+
+/* 用固定的模糊有问题,边角和动画中的模糊不一样(固定的模糊边缘是有颜色的,但动画的模糊边缘一律黑色) */
+@keyframes startCover-display {
+    0% {
+        backdrop-filter: blur(200px);
+        opacity: 1;
+    }
+
+    100% {
+        backdrop-filter: blur(200px);
+        opacity: 1;
+    }
+}

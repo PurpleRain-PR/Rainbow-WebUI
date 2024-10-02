@@ -3,6 +3,7 @@
 "use strict";
 
 function /*int*/ systemMain() {
+    suspendScreen();
     document.body.onload = null;
     initDesktop();
 
