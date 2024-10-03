@@ -11,7 +11,7 @@ function /*Struct_Window*/ Struct_Window() {
     this.DOMobj_locator = undefined;
     this.Bool_isMaximized = undefined;
 
-    this.Arr_Int_positionRestore/*[4]*/ = undefined; //old
+    //this.Arr_Int_positionRestore/*[4]*/ = undefined; //old
     this.Struct_StdWindowRect_windowRect = new Struct_StdWindowRect();//new
 
     this.Int_indexOfPileIndex = undefined;
@@ -87,10 +87,12 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
 
-    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_newWindow.DOMobj_locator.style.top);
-    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_newWindow.DOMobj_locator.style.left);
-    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_width = 60;/*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
-    Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_height = 30;//save attributes for the first time
+    // Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_newWindow.DOMobj_locator.style.top);
+    // Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_newWindow.DOMobj_locator.style.left);
+    // Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_width = 60;/*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
+    // Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_height = 30;//save attributes for the first time
+    //old
+    synchronizeWindowRect(Struct_Window_newWindow);//new
 
     Struct_Window_newWindow.Int_handle = distributeWindowHandle();
     addWindowToGWOP(Struct_Window_newWindow.Int_handle);
@@ -145,10 +147,14 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
         Struct_Window_targetWindow.DOMobj_frame.style.transform = "";
 
         Struct_Window_targetWindow.DOMobj_locator.style.filter = "";
-        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
-        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
-        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
-        Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
+
+        // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
+        // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
+        // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
+        // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
+        //old
+        synchronizeWindowRect(Struct_Window_targetWindow);//new
+
         /*save attribute copied from function "maximizeWindow" 2024.4.11 */
         //save restore attributes
         moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow);//adjust window cover status (added by YCH 2024.6.4)
@@ -197,10 +203,12 @@ function /*void*/ changeMaximizeStatus(Struct_Window_window) {
 function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
-    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
-    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
-    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
-    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
+    // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
+    // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
+    // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.width);
+    // Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = parseInt(Struct_Window_targetWindow.DOMobj_frame.style.height);
+    //old
+    synchronizeWindowRect(Struct_Window_targetWindow);//new
     /*bug fixed 2024.4.11 style.something is ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
     //save restore attributes
 
@@ -216,10 +224,13 @@ function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
 function /*void*/ restoreWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
-    Struct_Window_targetWindow.DOMobj_frame.style.height = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height + "px";//restore attributes
-    Struct_Window_targetWindow.DOMobj_frame.style.width = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width + "px";
-    Struct_Window_targetWindow.DOMobj_locator.style.left = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left + "px";
-    Struct_Window_targetWindow.DOMobj_locator.style.top = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top + "px";
+    // Struct_Window_targetWindow.DOMobj_frame.style.height = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height + "px";//restore attributes
+    // Struct_Window_targetWindow.DOMobj_frame.style.width = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width + "px";
+    // Struct_Window_targetWindow.DOMobj_locator.style.left = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left + "px";
+    // Struct_Window_targetWindow.DOMobj_locator.style.top = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top + "px";
+    //old
+
+    applyWindowRect(Struct_Window_targetWindow);//new
 
     DOMobj_targetWindow.setAttribute("class", "window");
     Struct_Window_targetWindow.Bool_isMaximized = false;
@@ -228,12 +239,12 @@ function /*void*/ restoreWindow(Struct_Window_targetWindow) {
 function /*void*/ closeWindow(Struct_Window_targetWindow) {
     let Int_len = Arr_Struct_Window_allWindows.length;
     for (let Int_i = 0; Int_i < Int_len; Int_i++) {//adjust other windows' index
-        if ((Arr_Struct_Window_allWindows[Int_i]).Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
-            if ((Arr_Struct_Window_allWindows[Int_i]).Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
-                (Arr_Struct_Window_allWindows[Int_i]).Int_pileIndex--;//adjust the index
-                (Arr_Struct_Window_allWindows[Int_i]).DOMobj_closeButton.innerHTML = "i=" + Arr_Struct_Window_allWindows[Int_i].Int_pileIndex;//Debug Config
-                if ((Arr_Struct_Window_allWindows[Int_i]).Int_pileIndex === 1) {
-                    (Arr_Struct_Window_allWindows[Int_i]).DOMobj_cover.setAttribute("style", "top:-100%;left:-100%;");//uncover the new top window
+        if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
+            if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
+                Arr_Struct_Window_allWindows[Int_i].Int_pileIndex--;//adjust the index
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.innerHTML = "i=" + Arr_Struct_Window_allWindows[Int_i].Int_pileIndex;//Debug Config
+                if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
+                    Arr_Struct_Window_allWindows[Int_i].DOMobj_cover.setAttribute("style", "top:-100%;left:-100%;");//uncover the new top window
                 }
             }
         }
@@ -556,6 +567,20 @@ function /*int*/ isWindowCoveredByWindow(Struct_Window_targetWindow, Struct_Wind
         );
     }
     return false;//未通过层级比较,直接否掉
+}
+
+function /*void*/ synchronizeWindowRect(Struct_Window_targetWindow) {//从DOM读取(同步)位置坐标,存入windowRect
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = Struct_Window_targetWindow.DOMobj_locator.offsetTop;
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = Struct_Window_targetWindow.DOMobj_locator.offsetLeft;
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = Struct_Window_targetWindow.DOMobj_frame.offsetWidth;
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = Struct_Window_targetWindow.DOMobj_frame.offsetHeight;
+}
+
+function /*void*/ applyWindowRect(Struct_Window_targetWindow) {//把windowRect存有的坐标应用到DOM
+    Struct_Window_targetWindow.DOMobj_frame.style.height = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height + "px";
+    Struct_Window_targetWindow.DOMobj_frame.style.width = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width + "px";
+    Struct_Window_targetWindow.DOMobj_locator.style.left = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left + "px";
+    Struct_Window_targetWindow.DOMobj_locator.style.top = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top + "px";
 }
 
 //Debug Configs
