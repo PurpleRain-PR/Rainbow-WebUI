@@ -1,3 +1,5 @@
+"use strict";
+
 function newWindowButton() {
   // 获取DOM元素
   const windowBase = document.getElementsByClassName("windowBase")[0];

@@ -1,10 +1,10 @@
+"use strict";
 //It seems empty yet --YCH
 //now it is not empty! --YCH 2024.9.28
-"use strict";
 
 function /*int*/ systemMain() {
-    suspendScreen();
     document.body.onload = null;
+    suspendScreen();
     initDesktop();
 
     newWindowButton();//debug

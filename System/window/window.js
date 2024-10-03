@@ -256,6 +256,14 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
     let Int_lastLeft = Int_moveOriginX;
 
     let Int_len = Arr_Struct_Window_allWindows.length;//等会遍历窗口用
+
+    for (let Int_i = 0; Int_i < Int_len; Int_i++) {
+        //两次剔除需要分开,因为窗口机器大量的情况下,即使把下面的窗口全部不给模糊,也会卡,必须直接ban掉显示,并且上面模糊之后会透出下面不模糊的
+        if (isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_i])) {//第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "none";
+        }
+    }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOP里面,先这样吧 PR 2024.10.3
+
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
@@ -269,7 +277,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, Int_lastTop, Int_lastLeft, Int_top, Int_left);
 
         for (let Int_i = 0; Int_i < Int_len; Int_i++) {
-            if (isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//在屏幕内才更新
+            if (isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//第二次更新剔除:在屏幕内才更新 这个要每次更新剔除一次
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
                 updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, Int_lastLeft, Int_lastTop, Int_left, Int_top);//update all windows' blur effect
             }
@@ -296,6 +304,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
             Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.left = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_left + "px";
             Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.top = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_top + "px";
             Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "";
         }
 
         document.onpointerup = null;
@@ -517,6 +526,36 @@ function /*int*/ getMaxHandle(/*void*/) {
         Int_maxHandle = Arr_Struct_Window_allWindows[Int_i].Int_handle > Int_maxHandle ? Arr_Struct_Window_allWindows[Int_i].Int_handle : Int_maxHandle;//math.max速度低于三目运算符，下次把calculateOverlapStatus那里的也换掉
     }
     return Int_maxHandle;
+}
+
+function /*int*/ isWindowFullCoveredByOthers(Struct_Window_targetWindow) {
+    if (Arr_Struct_Window_allWindows.length === 0) { return false; }//防呆
+    for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
+        if (Struct_Window_targetWindow.Int_handle !== (Arr_Struct_Window_allWindows[Int_i]).Int_handle) {
+            if (isWindowCoveredByWindow(Struct_Window_targetWindow, Arr_Struct_Window_allWindows[Int_i])) { return true; }
+        }
+    }
+    return false;
+}
+
+function /*int*/ isWindowCoveredByWindow(Struct_Window_targetWindow, Struct_Window_coverWindow) {
+    if ((Struct_Window_coverWindow.Int_indexOfPileIndex < Struct_Window_targetWindow.Int_indexOfPileIndex/*组层级更高,通过*/
+        || (Struct_Window_coverWindow.Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex/*组层级一致,组内层级更高,通过*/
+            && Struct_Window_coverWindow.Int_pileIndex < Struct_Window_targetWindow.Int_pileIndex))/*先确定窗口层级来短路,避免不必要计算,Cover一定会在target上面才能盖住,同时排除掉自己比自己的情况(即indexOfPileindex和pileIndex均相等)*/
+    ) {//通过层级比较,接下来开始计算四边覆盖
+        let Struct_StdWindowRect_rect1 = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect;
+        let Struct_StdWindowRect_rect2 = Struct_Window_coverWindow.Struct_StdWindowRect_windowRect;
+        let Int_right1 = Struct_StdWindowRect_rect1.Int_left + Struct_StdWindowRect_rect1.Int_width;
+        let Int_right2 = Struct_StdWindowRect_rect2.Int_left + Struct_StdWindowRect_rect2.Int_width;
+        let Int_bottom1 = Struct_StdWindowRect_rect1.Int_top + Struct_StdWindowRect_rect1.Int_height;
+        let Int_bottom2 = Struct_StdWindowRect_rect2.Int_top + Struct_StdWindowRect_rect2.Int_height;
+        return (Int_bottom2 >= Int_bottom1
+            && Int_right2 >= Int_right1
+            && Struct_StdWindowRect_rect2.Int_left <= Struct_StdWindowRect_rect1.Int_left
+            && Struct_StdWindowRect_rect2.Int_top <= Struct_StdWindowRect_rect1.Int_top
+        );
+    }
+    return false;//未通过层级比较,直接否掉
 }
 
 //Debug Configs

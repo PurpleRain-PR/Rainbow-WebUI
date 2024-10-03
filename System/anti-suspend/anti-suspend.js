@@ -1,6 +1,6 @@
-"use strict"
+"use strict";
 
-function /*void*/ suspendScreen() {
+function /*void*/ suspendScreen(/*void*/) {
     let DOMobj_startCover = document.createElement("div");//locator
     DOMobj_startCover.setAttribute("class", "startCover");
     DOMobj_startCover.setAttribute("style", "animation: startCover-display 1s 0s linear infinite;");
@@ -18,7 +18,7 @@ function /*void*/ suspendScreen() {
     }
 }
 
-function /*void*/ silenceAudioLoop() {
+function /*void*/ silenceAudioLoop(/*void*/) {
     const DOMobj_aud = document.createElement("audio");
     document.body.appendChild(DOMobj_aud);
     DOMobj_aud.src = "./System/anti-suspend/silence.wav";
