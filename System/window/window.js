@@ -1,4 +1,5 @@
 "use strict";
+
 //sturcts
 function /*Struct_Window*/ Struct_Window() {
     this.Int_handle = undefined;
@@ -9,11 +10,11 @@ function /*Struct_Window*/ Struct_Window() {
     this.DOMobj_closeButton = undefined;
     this.DOMobj_cover = undefined;
     this.DOMobj_locator = undefined;
+    this.Bool_needToBeUpdated = undefined;
     this.Bool_isMaximized = undefined;
-
-    //this.Arr_Int_positionRestore/*[4]*/ = undefined; //old
+    this.Bool_isHidden = undefined;
+    this.Str_title = undefined;
     this.Struct_StdWindowRect_windowRect = new Struct_StdWindowRect();//new
-
     this.Int_indexOfPileIndex = undefined;
     this.Int_pileIndex = undefined;
 }
@@ -27,7 +28,9 @@ function /*Struct_StdWindowRect*/ Struct_StdWindowRect() {//代替Arr_Int[4]型�
 //global variables
 var Arr_Struct_Window_allWindows/*for system only*/ = new Array();
 var Arr_Int_globalWindowOverlapTable/*for system only*/ = new Array();
-var DOMobj_windowBase/*for system only*/ = undefined;//调用initDesktop后才赋值
+var DOMobj_windowBase/*for system only*/ = undefined;//调用initDesktop()后才赋值
+var Int_indexOfWindowToBeAsyncUpdated/*for system only*/ = 0;//仅被asyncUpdateAllWindow()使用
+var Bool_suspendAsyncUpdate/*for system only*/ = false;//仅被asyncUpdateAllWindow()使用
 
 //functions
 function /*void*/ initDesktop(/*void*/) {
@@ -78,8 +81,8 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     DOMobj_newWindow.appendChild(DOMobj_cover);
     Struct_Window_newWindow.DOMobj_cover = DOMobj_cover;
 
-    DOMobj_cover.setAttribute("style", "top:-100%;left:-100%;");
-    DOMobj_windowLocator.setAttribute("style", "top:0;left:0;");
+    DOMobj_cover.setAttribute("style", "top:0;left:0;visibility:hidden;");
+    DOMobj_windowLocator.setAttribute("style", "top:0;left:0;display:block;");
 
     Struct_Window_newWindow.Bool_isMaximized = false;
     DOMobj_newWindow.onpointerdown = function () { if (Struct_Window_newWindow.Int_pileIndex !== 1) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
@@ -93,6 +96,8 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
     // Struct_Window_newWindow.Struct_StdWindowRect_windowRect.Int_height = 30;//save attributes for the first time
     //old
     synchronizeWindowRect(Struct_Window_newWindow);//new
+    synchornizeDisplayStatus(Struct_Window_newWindow);
+    Struct_Window_newWindow.Bool_needToBeUpdated = false;
 
     Struct_Window_newWindow.Int_handle = distributeWindowHandle();
     addWindowToGWOP(Struct_Window_newWindow.Int_handle);
@@ -104,6 +109,27 @@ function /*DOMobj*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
 
     return Struct_Window_newWindow;
 }//2024.4.2
+
+function /*void*/ asyncUpdateAllWindow() {
+    if (Bool_suspendAsyncUpdate) return;//高占用事件启动,暂停更新
+    if (Arr_Struct_Window_allWindows.length === 0) return;//没有窗口要操作
+
+    Int_indexOfWindowToBeAsyncUpdated++;
+    if (Int_indexOfWindowToBeAsyncUpdated >= Arr_Struct_Window_allWindows.length) Int_indexOfWindowToBeAsyncUpdated = 0;//循环扫描整个表
+
+    //处理系统内部更改
+    //剔除就放在这里了
+    Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isHidden = isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+
+
+    //处理系统外部更改
+    if (Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_needToBeUpdated) {//(外部的更改)被标记更改的才更新
+        applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+        Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_needToBeUpdated = false;
+    }
+    console.log(0);
+}
 
 function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
     let DOMobj_SVGfilterEffect = document.getElementById("SVGfilterEffect-window").firstElementChild;
@@ -169,27 +195,27 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
     document.ondragend = function (event) { event.preventDefault(); };
 }
 
-function /*void*/ dragObject(DOMobj_dragBox, DOMobj_moveTarget) {
-    let Int_moveOriginX = parseInt(DOMobj_moveTarget.style.left);
-    let Int_moveOriginY = parseInt(DOMobj_moveTarget.style.top);
-    let Int_cursorX = window.event.clientX;
-    let Int_cursorY = window.event.clientY;
-    document.onpointermove = function () {
-        let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
-        let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
-        DOMobj_moveTarget.style.left = Int_left + "px";
-        DOMobj_moveTarget.style.top = Int_top + "px";
-    };
-    document.onpointerup = function (event) {
-        document.onpointerup = null;
-        document.onpointermove = null;
-        if (typeof (DOMobj_dragBox.releasePointerCapture) != "undefined") {
-            DOMobj_dragBox.releasePointerCapture(event.pointerId);
-        };
-    };
-    document.ondragstart = function (event) { event.preventDefault(); };
-    document.ondragend = function (event) { event.preventDefault(); };
-}
+// function /*void*/ dragObject(DOMobj_dragBox, DOMobj_moveTarget) {
+//     let Int_moveOriginX = parseInt(DOMobj_moveTarget.style.left);
+//     let Int_moveOriginY = parseInt(DOMobj_moveTarget.style.top);
+//     let Int_cursorX = window.event.clientX;
+//     let Int_cursorY = window.event.clientY;
+//     document.onpointermove = function () {
+//         let Int_left = Int_moveOriginX + window.event.clientX - Int_cursorX;
+//         let Int_top = Int_moveOriginY + window.event.clientY - Int_cursorY;
+//         DOMobj_moveTarget.style.left = Int_left + "px";
+//         DOMobj_moveTarget.style.top = Int_top + "px";
+//     };
+//     document.onpointerup = function (event) {
+//         document.onpointerup = null;
+//         document.onpointermove = null;
+//         if (typeof (DOMobj_dragBox.releasePointerCapture) != "undefined") {
+//             DOMobj_dragBox.releasePointerCapture(event.pointerId);
+//         };
+//     };
+//     document.ondragstart = function (event) { event.preventDefault(); };
+//     document.ondragend = function (event) { event.preventDefault(); };
+// }
 
 function /*void*/ changeMaximizeStatus(Struct_Window_window) {
     if (Struct_Window_window.Bool_isMaximized) {
@@ -256,6 +282,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
 }
 
 function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copied from function “dragObject” and customized for desktop QwQ
+    Bool_suspendAsyncUpdate = true;
     let DOMobj_SVGfilterEffect_desktop = document.getElementById("SVGfilterEffect-windowBaseDragHandle").firstElementChild;
     let DOMobj_SVGfilterEffect_window = document.getElementById("SVGfilterEffect-window").firstElementChild;
     let Int_moveOriginX = parseInt(DOMobj_moveTarget.style.left);
@@ -270,8 +297,8 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
 
     for (let Int_i = 0; Int_i < Int_len; Int_i++) {
         //两次剔除需要分开,因为窗口机器大量的情况下,即使把下面的窗口全部不给模糊,也会卡,必须直接ban掉显示,并且上面模糊之后会透出下面不模糊的
-        if (isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_i])) {//第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "none";
+        if (Arr_Struct_Window_allWindows[Int_i].Bool_isHidden) {//第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "none";//这里用visibility比display更快 //我是sb 肯定display更快啊!24.10.4
         }
     }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOP里面,先这样吧 PR 2024.10.3
 
@@ -288,7 +315,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, Int_lastTop, Int_lastLeft, Int_top, Int_left);
 
         for (let Int_i = 0; Int_i < Int_len; Int_i++) {
-            if (isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//第二次更新剔除:在屏幕内才更新 这个要每次更新剔除一次
+            if (!Arr_Struct_Window_allWindows[Int_i].Bool_isHidden && isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//第二次更新剔除:在屏幕内才更新 这个要每次更新剔除一次
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
                 updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, Int_lastLeft, Int_lastTop, Int_left, Int_top);//update all windows' blur effect
             }
@@ -302,6 +329,8 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         Int_lastLeft = Int_left;
     };
     document.onpointerup = function (event) {
+        Bool_suspendAsyncUpdate = false;//解除封印QwQ
+
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, 0, 0, 0, 0);//clear blur
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
@@ -309,13 +338,15 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         DOMobj_moveTarget.style.top = Int_top + "px";//2024.8.17 update: to add feature "motionBlur" update the position at the end of the drag  YCH
         updateWindowBackground(DOMobj_dragBox, Int_left, Int_top);//let grid align with the pixels(int -> float 强制类型转换)
         for (let Int_i = 0; Int_i < Int_len; Int_i++) {//clear
-            updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, 0, 0, 0, 0);
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.left = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_left + "px";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.top = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_top + "px";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "";
+            if (!Arr_Struct_Window_allWindows[Int_i].Bool_isHidden) {
+                updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, 0, 0, 0, 0);
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.left = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_left + "px";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.top = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_top + "px";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
+                //Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "block";
+            }
         }
 
         document.onpointerup = null;
@@ -426,15 +457,15 @@ function /*Bool*/ isWindowInScreen(Struct_Window_window) {
 }
 
 function /*void*/ coverWindow(Struct_Window_targetWindow) {
-    Struct_Window_targetWindow.DOMobj_cover.style.left = "0";
-    Struct_Window_targetWindow.DOMobj_cover.style.top = "0";
-    //Struct_Window_targetWindow.DOMobj_cover.style.display = "";
+    //Struct_Window_targetWindow.DOMobj_cover.style.left = "0";
+    //Struct_Window_targetWindow.DOMobj_cover.style.top = "0";
+    Struct_Window_targetWindow.DOMobj_cover.style.visibility = "visible";//提升渲染性能
 }
 
 function /*void*/ uncoverWindow(Struct_Window_targetWindow) {
-    Struct_Window_targetWindow.DOMobj_cover.style.top = "-100%";
-    Struct_Window_targetWindow.DOMobj_cover.style.left = "-100%";//uncover the window
-    //Struct_Window_targetWindow.DOMobj_cover.style.display = "none";
+    //Struct_Window_targetWindow.DOMobj_cover.style.top = "-100%";
+    //Struct_Window_targetWindow.DOMobj_cover.style.left = "-100%";//uncover the window
+    Struct_Window_targetWindow.DOMobj_cover.style.visibility = "hidden";//提升渲染性能
 }
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
@@ -583,9 +614,16 @@ function /*void*/ applyWindowRect(Struct_Window_targetWindow) {//把windowRect�
     Struct_Window_targetWindow.DOMobj_locator.style.top = Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top + "px";
 }
 
+function /*void*/ synchornizeDisplayStatus(Struct_Window_targetWindow) {
+    Struct_Window_targetWindow.Bool_isHidden = Struct_Window_targetWindow.DOMobj_locator.style.display === "none";
+}
+
+function /*void*/ applyDisplayStatus(Struct_Window_targetWindow) {
+    Struct_Window_targetWindow.DOMobj_locator.style.display = Struct_Window_targetWindow.Bool_isHidden ? "none" : "block";
+}
+
 //Debug Configs
 var i = initWindow;
 var a = getWindowByHandle;
 var m = moveWindowToTheTopOfItsIndexGroup;
 var r = function (r) { m(a(r)); };
-
