@@ -128,10 +128,10 @@ function /*void*/ asyncUpdateAllWindow() {
         applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
         Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_needToBeUpdated = false;
     }
-    console.log(0);
 }
 
 function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
+    Bool_suspendAsyncUpdate = true;
     let DOMobj_SVGfilterEffect = document.getElementById("SVGfilterEffect-window").firstElementChild;
     let Int_moveOriginX = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.left);
     let Int_moveOriginY = parseInt(Struct_Window_targetWindow.DOMobj_locator.style.top);
@@ -166,6 +166,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
         Int_lastLeft = Int_left;
     };
     document.onpointerup = function (event) {
+        Bool_suspendAsyncUpdate = false;
         Struct_Window_targetWindow.DOMobj_locator.style.left = Int_lastLeft + "px";
         Struct_Window_targetWindow.DOMobj_locator.style.top = Int_lastTop + "px";
         updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, 0, 0, 0, 0);
@@ -315,14 +316,17 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, Int_lastTop, Int_lastLeft, Int_top, Int_left);
 
         for (let Int_i = 0; Int_i < Int_len; Int_i++) {
-            if (!Arr_Struct_Window_allWindows[Int_i].Bool_isHidden && isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//第二次更新剔除:在屏幕内才更新 这个要每次更新剔除一次
+            if (Arr_Struct_Window_allWindows[Int_i].Bool_isHidden) continue;//这里第一次剔除要拿出来,因为如果不可见就不要反复清空filter,transform等属性,减小开销
+            if (isWindowInScreen(Arr_Struct_Window_allWindows[Int_i])) {//第二次更新剔除:在屏幕内才更新 这个要每次更新剔除一次
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.visibility = "";
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
                 updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, Int_lastLeft, Int_lastTop, Int_left, Int_top);//update all windows' blur effect
             }
-            else {
+            else {//这里会触发"提交"卡顿,具体原因不明,有待分析
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
-                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.visibility = "hidden";
+                // Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = ""; //原因定位了,就在这里! 重新显示的时候css filter的url()函数因为DOM元素太多导致查找极其慢
             }
         }//这里因为把窗口位置放在两次移动点中间麻烦，就没写了，直接没有偏移窗口位置，看看观感再说吧 24.8.18YCH
         Int_lastTop = Int_top;
