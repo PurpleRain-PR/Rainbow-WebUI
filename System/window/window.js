@@ -30,7 +30,8 @@ var Arr_Struct_Window_allWindows/*for system only*/ = new Array();
 var Arr_Int_globalWindowOverlapTable/*for system only*/ = new Array();
 var DOMobj_windowBase/*for system only*/ = undefined;//调用initDesktop()后才赋值
 var Int_indexOfWindowToBeAsyncUpdated/*for system only*/ = 0;//仅被asyncUpdateAllWindow()使用
-var Bool_suspendAsyncUpdate/*for system only*/ = false;//仅被asyncUpdateAllWindow()使用
+var Arr_Int_indexOfGWOPToBeAsyncUpdated/*for system only*/ = new Array(0, 0);//仅被asyncUpdateGWOP()使用 //[0]:外层循环位置,[1]:内层循环位置
+var Bool_suspendAsyncUpdate/*for system only*/ = false;//仅被两个异步更新函数使用
 
 //functions
 function /*void*/ initDesktop(/*void*/) {
@@ -107,7 +108,8 @@ function /*void*/ asyncUpdateAllWindow() {
     //两个过滤合并了,但优先顺序不变,用逻辑短路,减少if的个数,编译更快
 
     Int_indexOfWindowToBeAsyncUpdated++;
-    if (Int_indexOfWindowToBeAsyncUpdated >= Arr_Struct_Window_allWindows.length) Int_indexOfWindowToBeAsyncUpdated = 0;//循环扫描整个表
+    if (Int_indexOfWindowToBeAsyncUpdated >= Arr_Struct_Window_allWindows.length)
+        Int_indexOfWindowToBeAsyncUpdated = 0;//循环扫描整个表
 
     //处理系统内部更改
     //剔除就放在这里了
@@ -180,7 +182,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
         if (typeof (Struct_Window_targetWindow.DOMobj_dragBox.releasePointerCapture) != "undefined") {
             Struct_Window_targetWindow.DOMobj_dragBox.releasePointerCapture(event.pointerId);
         };
-        updateAllOverlapStatusOfWindow(Struct_Window_targetWindow);
+        // updateAllOverlapStatusOfWindow(Struct_Window_targetWindow); //这里交给async的异步更新
     };
     document.ondragstart = function (event) { event.preventDefault(); };
     document.ondragend = function (event) { event.preventDefault(); };
@@ -467,7 +469,7 @@ function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_w
     return Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1];
 }
 
-function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
+function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {//计算,返回,并且更新到GWOP
     if (Struct_Window_window1.Int_handle === Struct_Window_window2.Int_handle) { return 0; }//防呆
     let Int_handleL = undefined;
     let Int_handleS = undefined;
@@ -483,15 +485,19 @@ function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_
         = calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2));
 }
 
-function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
+function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {//仅计算,然后返回
     let Struct_StdWindowRect_rect1 = Struct_Window_window1.Struct_StdWindowRect_windowRect;
     let Struct_StdWindowRect_rect2 = Struct_Window_window2.Struct_StdWindowRect_windowRect;
     let Int_right1 = Struct_StdWindowRect_rect1.Int_left + Struct_StdWindowRect_rect1.Int_width;
     let Int_right2 = Struct_StdWindowRect_rect2.Int_left + Struct_StdWindowRect_rect2.Int_width;
     let Int_bottom1 = Struct_StdWindowRect_rect1.Int_top + Struct_StdWindowRect_rect1.Int_height;
     let Int_bottom2 = Struct_StdWindowRect_rect2.Int_top + Struct_StdWindowRect_rect2.Int_height;
-    let Int_dx = Math.max(Struct_StdWindowRect_rect1.Int_left - Int_right2, Struct_StdWindowRect_rect2.Int_left - Int_right1);
-    let Int_dy = Math.max(Struct_StdWindowRect_rect1.Int_top - Int_bottom2, Struct_StdWindowRect_rect2.Int_top - Int_bottom1);
+    let Int_dx = Math.max(
+        Struct_StdWindowRect_rect1.Int_left - Int_right2,
+        Struct_StdWindowRect_rect2.Int_left - Int_right1);
+    let Int_dy = Math.max(
+        Struct_StdWindowRect_rect1.Int_top - Int_bottom2,
+        Struct_StdWindowRect_rect2.Int_top - Int_bottom1);
     if (Int_dx > 0 && Int_dy > 0) { return Int_dx + Int_dy; }
     return Math.max(Int_dx, Int_dy);
 }
@@ -546,11 +552,21 @@ function /*void*/ refreshGWOP(/*void*/) {
     }
 }
 
-function /*void*/ asyncUpdateAllGWOP(/*void*/) {
-    return;
+function /*void*/ asyncUpdateGWOP(/*void*/) {
+    if (Bool_suspendAsyncUpdate || Arr_Struct_Window_allWindows.length <= 1) return;//至少2窗口才要操作
+    Arr_Int_indexOfGWOPToBeAsyncUpdated[1]++;//按照最快的方式遍历所有双窗口组合
+    if (Arr_Int_indexOfGWOPToBeAsyncUpdated[1] >= Arr_Struct_Window_allWindows.length) {//内循环一圈后外循环加一
+        Arr_Int_indexOfGWOPToBeAsyncUpdated[0]++;
+        if (Arr_Int_indexOfGWOPToBeAsyncUpdated[0] >= Arr_Struct_Window_allWindows.length - 1)
+            Arr_Int_indexOfGWOPToBeAsyncUpdated[0] = 0;
+        Arr_Int_indexOfGWOPToBeAsyncUpdated[1] = Arr_Int_indexOfGWOPToBeAsyncUpdated[0] + 1;
+    }
+    updateWindowOverlapStatus(
+        Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOPToBeAsyncUpdated[0]],
+        Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOPToBeAsyncUpdated[1]]);//计算,更新
 }
 
-function /*void*/ updateAllOverlapStatusOfWindow(Struct_Window_targetWindow) {
+function /*void*/ updateAllOverlapStatusOfWindow(Struct_Window_targetWindow) {//应该可以被refreshGWOP替代了,效率更高,这个函数当时测试用的,有2倍的重复遍历
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
         updateWindowOverlapStatus(Struct_Window_targetWindow, Arr_Struct_Window_allWindows[Int_i]);
     }

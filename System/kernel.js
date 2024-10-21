@@ -139,6 +139,6 @@ function /*int*/ systemMain() {
 function /*void*/ systemMainInterval() {
     //各种操作
     asyncUpdateAllWindow();
-    refreshGWOP();
+    asyncUpdateGWOP();
     //if (/*以后塞异常终止条件,换掉false*/false) clearInterval(Int_mainProcessIntervalID);
 }
