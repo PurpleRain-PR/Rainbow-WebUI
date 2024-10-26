@@ -52,7 +52,6 @@ function /*void*/ systemMainIntervalControl() {
         clearInterval(Arr_Int_sysMainIntervalID[Arr_Int_sysMainIntervalID.length - 1]);
         Arr_Int_sysMainIntervalID.pop();
         Bool_hasStoppedSysInterval = true;
-        console.log("stop");
     }
     Int_sysIntervalExecuteCount = 0;//清零计数器
     if (Arr_Int_sysMainIntervalID.length < Int_targetSysIntervalNum) {//上调
