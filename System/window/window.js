@@ -95,7 +95,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_right, Int_width, Int_height
     addWindowToGWOP(Struct_Window_newWindow.Int_handle);
     Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
     Struct_Window_newWindow.Int_indexOfPileIndex = 1;//Debug Config
-    Struct_Window_newWindow.DOMobj_maximizeButton.innerHTML = String(Struct_Window_newWindow.Int_handle);//Debug Config
+    Struct_Window_newWindow.DOMobj_maximizeButton.textContent = String(Struct_Window_newWindow.Int_handle);//Debug Config
 
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
 
@@ -252,7 +252,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
         if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
             if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
                 Arr_Struct_Window_allWindows[Int_i].Int_pileIndex--;//adjust the index
-                Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.innerHTML = "i=" + Arr_Struct_Window_allWindows[Int_i].Int_pileIndex;//Debug Config
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + Arr_Struct_Window_allWindows[Int_i].Int_pileIndex;//Debug Config
                 if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
                     uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//uncover the new top window
                 }
@@ -411,14 +411,14 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
                     coverWindow(Arr_Struct_Window_allWindows[Int_i]);
                 }
             }
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.innerHTML = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
         }
     }
     Struct_Window_targetWindow.Int_pileIndex = 1;//set top index
 
     uncoverWindow(Struct_Window_targetWindow);
 
-    Struct_Window_targetWindow.DOMobj_closeButton.innerHTML = "i=" + Struct_Window_targetWindow.Int_pileIndex;//Debug Config
+    Struct_Window_targetWindow.DOMobj_closeButton.textContent = "i=" + Struct_Window_targetWindow.Int_pileIndex;//Debug Config
 
 
     if (Struct_Window_lastTopWindow !== undefined && Struct_Window_lastTopWindow.DOMobj_frame.nextSibling !== undefined) {//adjust the DOM sequence
