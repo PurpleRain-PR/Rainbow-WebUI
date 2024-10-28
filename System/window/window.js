@@ -113,7 +113,9 @@ function /*void*/ asyncUpdateAllWindow() {
 
     //处理系统内部更改
     //剔除就放在这里了
-    Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isHidden = isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isHidden =
+        /*!isWindowInScreen(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])
+        || */isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
 
     //处理系统外部更改
@@ -281,9 +283,9 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
 
     for (let Int_i = 0; Int_i < Int_len; Int_i++) {
         //两次剔除需要分开,因为窗口机器大量的情况下,即使把下面的窗口全部不给模糊,也会卡,必须直接ban掉显示,并且上面模糊之后会透出下面不模糊的
-        if (Arr_Struct_Window_allWindows[Int_i].Bool_isHidden) {//第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "none";//这里用visibility比display更快 //我是sb 肯定display更快啊!24.10.4
-        }
+        //第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
+        //这里用visibility比display更快 //我是sb 肯定display更快啊!24.10.4
+        applyDisplayStatus(Arr_Struct_Window_allWindows[Int_i]);//老的已删,这个操作已经被独立出来作为函数了
     }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOP里面,先这样吧 PR 2024.10.3
 
     document.onpointermove = function (event) {
