@@ -26,10 +26,6 @@ function /*void*/ systemMainInterval() {
     //if (/*以后塞异常终止条件,换掉false*/false) clearInterval(Int_mainProcessIntervalID);
 }
 
-var Int_maxSysIntervalNum = 500;
-var Int_maxSysIntervalCreateStep = 20;
-var Int_minSysIntervalCreateStep = 4;
-var Int_sysIntervalControlInterval = 500;
 
 var Arr_Int_sysMainIntervalID = new Array();
 var Bool_hasStoppedSysInterval = false;

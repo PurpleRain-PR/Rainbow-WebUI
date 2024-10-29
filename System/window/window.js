@@ -349,8 +349,6 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
 }
 
 function /*void*/ updateWindowBackground(DOMobj_target, Float_X, Float_Y) {//24.8.17 blur update: coord Int->Float
-    let String_gridColor = "#2c2d6b";
-    let Int_gridDistance = 100;//px
     Float_X = ((Float_X % Int_gridDistance) + Int_gridDistance) % Int_gridDistance;
     Float_Y = (((Int_gridDistance - Float_Y) % Int_gridDistance) + Int_gridDistance) % Int_gridDistance;
     DOMobj_target.style.background = "repeating-linear-gradient(90deg,transparent 0px,transparent " + Float_X + "px," + String_gridColor + " " + Float_X + "px," + String_gridColor + " " + (Float_X + 1) + "px,transparent " + (Float_X + 1) + "px,transparent " + Int_gridDistance + "px),repeating-linear-gradient(0deg,transparent 0px,transparent " + Float_Y + "px," + String_gridColor + " " + Float_Y + "px," + String_gridColor + " " + (Float_Y + 1) + "px,transparent " + (Float_Y + 1) + "px,transparent " + Int_gridDistance + "px)";
