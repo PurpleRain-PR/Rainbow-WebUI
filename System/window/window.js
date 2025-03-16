@@ -27,10 +27,10 @@ function /*Struct_StdWindowRect*/ Struct_StdWindowRect() {//代替Arr_Int[4]型�
 }
 //global variables
 var Arr_Struct_Window_allWindows/*for system only*/ = new Array();
-var Arr_Int_globalWindowOverlapTable/*for system only*/ = new Array();
+var Arr_Int_globalWindowOverlapTable/*for system only*/ = new Array();//卧槽 写了这么久才发现以前全局窗口遮挡表的缩写所有的GWOT全打成了GWOP,一查有25个
 var DOMobj_windowBase/*for system only*/ = undefined;//调用initDesktop()后才赋值
 var Int_indexOfWindowToBeAsyncUpdated/*for system only*/ = 0;//仅被asyncUpdateAllWindow()使用
-var Arr_Int_indexOfGWOPToBeAsyncUpdated/*for system only*/ = new Array(0, 0);//仅被asyncUpdateGWOP()使用 //[0]:外层循环位置,[1]:内层循环位置
+var Arr_Int_indexOfGWOTToBeAsyncUpdated/*for system only*/ = new Array(0, 0);//仅被asyncUpdateGWOT()使用 //[0]:外层循环位置,[1]:内层循环位置
 var Bool_suspendAsyncUpdate/*for system only*/ = false;//仅被两个异步更新函数使用
 
 //functions
@@ -92,7 +92,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_right, Int_width, Int_height
     synchornizeDisplayStatus(Struct_Window_newWindow);
 
     Struct_Window_newWindow.Int_handle = distributeWindowHandle();
-    addWindowToGWOP(Struct_Window_newWindow.Int_handle);
+    addWindowToGWOT(Struct_Window_newWindow.Int_handle);
     Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
     Struct_Window_newWindow.Int_indexOfPileIndex = 1;//Debug Config
     Struct_Window_newWindow.DOMobj_maximizeButton.textContent = String(Struct_Window_newWindow.Int_handle);//Debug Config
@@ -261,7 +261,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
             }
         }
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
-    removeWindowFromGWOP(Struct_Window_targetWindow.Int_handle);
+    removeWindowFromGWOT(Struct_Window_targetWindow.Int_handle);
     Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
     Struct_Window_targetWindow.DOMobj_locator.remove();//remove from DOM
     Struct_Window_targetWindow = null;//free the memory
@@ -286,7 +286,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         //第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
         //这里用visibility比display更快 //我是sb 肯定display更快啊!24.10.4
         applyDisplayStatus(Arr_Struct_Window_allWindows[Int_i]);//老的已删,这个操作已经被独立出来作为函数了
-    }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOP里面,先这样吧 PR 2024.10.3
+    }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOT里面,先这样吧 PR 2024.10.3
 
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
@@ -469,7 +469,7 @@ function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_w
     return Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1];
 }
 
-function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {//计算,返回,并且更新到GWOP
+function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {//计算,返回,并且更新到GWOT
     if (Struct_Window_window1.Int_handle === Struct_Window_window2.Int_handle) { return 0; }//防呆
     let Int_handleL = undefined;
     let Int_handleS = undefined;
@@ -517,34 +517,34 @@ function /*void*/ updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGf
     DOMobj_SVGfilterEffectContainer.setAttribute("stdDeviation", Float_distance / 2 + ",0");
 }
 
-function /*void*/ addWindowToGWOP(Int_targetHandle) {//请务必在把window添加到allWindows中之前先调用我，否则如果要添加的窗口刚好是最大handle则不会正确扩充表
+function /*void*/ addWindowToGWOT(Int_targetHandle) {//请务必在把window添加到allWindows中之前先调用我，否则如果要添加的窗口刚好是最大handle则不会正确扩充表
     let Int_maxHandle = getMaxHandle();
     if (Int_targetHandle >= Int_maxHandle) {
-        extendGWOP((Int_targetHandle * (Int_targetHandle - 1) >> 1) - (Int_maxHandle * (Int_maxHandle - 1) >> 1));
+        extendGWOT((Int_targetHandle * (Int_targetHandle - 1) >> 1) - (Int_maxHandle * (Int_maxHandle - 1) >> 1));
     }
 }
 
-function /*void*/ removeWindowFromGWOP(Int_targetHandle) {
+function /*void*/ removeWindowFromGWOT(Int_targetHandle) {
     if (Int_targetHandle === getMaxHandle()) {
-        shrinkGWOP(Int_targetHandle - 1);
+        shrinkGWOT(Int_targetHandle - 1);
     }
 }
 
-function /*void*/ extendGWOP(Int_n) {
+function /*void*/ extendGWOT(Int_n) {
     while (Int_n > 0) {
         Arr_Int_globalWindowOverlapTable.push(0);
         Int_n--;
     }
 }
 
-function /*void*/ shrinkGWOP(Int_n) {
+function /*void*/ shrinkGWOT(Int_n) {
     while (Int_n > 0) {
         Arr_Int_globalWindowOverlapTable.pop();
         Int_n--;
     }
 }
 
-function /*void*/ refreshGWOP(/*void*/) {
+function /*void*/ refreshGWOT(/*void*/) {
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i > 0; Int_i--) {
         for (let Int_j = Int_i - 1; Int_j >= 0; Int_j--) {
             updateWindowOverlapStatus(Arr_Struct_Window_allWindows[Int_i], Arr_Struct_Window_allWindows[Int_j]);
@@ -552,21 +552,21 @@ function /*void*/ refreshGWOP(/*void*/) {
     }
 }
 
-function /*void*/ asyncUpdateGWOP(/*void*/) {
+function /*void*/ asyncUpdateGWOT(/*void*/) {
     if (Bool_suspendAsyncUpdate || Arr_Struct_Window_allWindows.length <= 1) return;//至少2窗口才要操作
-    Arr_Int_indexOfGWOPToBeAsyncUpdated[1]++;//按照最快的方式遍历所有双窗口组合
-    if (Arr_Int_indexOfGWOPToBeAsyncUpdated[1] >= Arr_Struct_Window_allWindows.length) {//内循环一圈后外循环加一
-        Arr_Int_indexOfGWOPToBeAsyncUpdated[0]++;
-        if (Arr_Int_indexOfGWOPToBeAsyncUpdated[0] >= Arr_Struct_Window_allWindows.length - 1)
-            Arr_Int_indexOfGWOPToBeAsyncUpdated[0] = 0;
-        Arr_Int_indexOfGWOPToBeAsyncUpdated[1] = Arr_Int_indexOfGWOPToBeAsyncUpdated[0] + 1;
+    Arr_Int_indexOfGWOTToBeAsyncUpdated[1]++;//按照最快的方式遍历所有双窗口组合
+    if (Arr_Int_indexOfGWOTToBeAsyncUpdated[1] >= Arr_Struct_Window_allWindows.length) {//内循环一圈后外循环加一
+        Arr_Int_indexOfGWOTToBeAsyncUpdated[0]++;
+        if (Arr_Int_indexOfGWOTToBeAsyncUpdated[0] >= Arr_Struct_Window_allWindows.length - 1)
+            Arr_Int_indexOfGWOTToBeAsyncUpdated[0] = 0;
+        Arr_Int_indexOfGWOTToBeAsyncUpdated[1] = Arr_Int_indexOfGWOTToBeAsyncUpdated[0] + 1;
     }
     updateWindowOverlapStatus(
-        Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOPToBeAsyncUpdated[0]],
-        Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOPToBeAsyncUpdated[1]]);//计算,更新
+        Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOTToBeAsyncUpdated[0]],
+        Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOTToBeAsyncUpdated[1]]);//计算,更新
 }
 
-function /*void*/ updateAllOverlapStatusOfWindow(Struct_Window_targetWindow) {//应该可以被refreshGWOP替代了,效率更高,这个函数当时测试用的,有2倍的重复遍历
+function /*void*/ updateAllOverlapStatusOfWindow(Struct_Window_targetWindow) {//应该可以被refreshGWOT替代了,效率更高,这个函数当时测试用的,有2倍的重复遍历
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
         updateWindowOverlapStatus(Struct_Window_targetWindow, Arr_Struct_Window_allWindows[Int_i]);
     }

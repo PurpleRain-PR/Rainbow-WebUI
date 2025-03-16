@@ -22,7 +22,7 @@ function /*void*/ systemMainInterval() {
     //各种操作
     // Bool_suspendAsyncUpdate = false;//debug config
     asyncUpdateAllWindow();
-    asyncUpdateGWOP();
+    asyncUpdateGWOT();
     //if (/*以后塞异常终止条件,换掉false*/false) clearInterval(Int_mainProcessIntervalID);
 }
 
