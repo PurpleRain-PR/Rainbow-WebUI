@@ -10,6 +10,7 @@ function /*Struct_Window*/ Struct_Window() {
     this.DOMobj_closeButton = undefined;
     this.DOMobj_cover = undefined;
     this.DOMobj_locator = undefined;
+    this.DOMobj_rotateBase = undefined;
     this.Bool_needToBeUpdated = undefined;
     this.Bool_isMaximized = undefined;
     this.Bool_isHidden = undefined;
@@ -50,9 +51,13 @@ function /*Struct_Window*/ initWindow(Int_left, Int_right, Int_width, Int_height
     Struct_Window_newWindow.DOMobj_locator.setAttribute("class", "windowLocator");
     DOMobj_windowBase.appendChild(Struct_Window_newWindow.DOMobj_locator);
 
+    Struct_Window_newWindow.DOMobj_rotateBase = document.createElement("div");//rotateBase
+    Struct_Window_newWindow.DOMobj_rotateBase.setAttribute("class", "windowRotateBase");
+    Struct_Window_newWindow.DOMobj_locator.appendChild(Struct_Window_newWindow.DOMobj_rotateBase);
+
     Struct_Window_newWindow.DOMobj_frame = document.createElement("div");//window
     Struct_Window_newWindow.DOMobj_frame.setAttribute("class", "window");
-    Struct_Window_newWindow.DOMobj_locator.appendChild(Struct_Window_newWindow.DOMobj_frame);
+    Struct_Window_newWindow.DOMobj_rotateBase.appendChild(Struct_Window_newWindow.DOMobj_frame);
 
     Struct_Window_newWindow.DOMobj_navigator = document.createElement("div");//navigator
     Struct_Window_newWindow.DOMobj_navigator.setAttribute("class", "nav");
@@ -138,6 +143,8 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
     let Int_lastTop = Int_moveOriginY;//24.8.18 update motionBlur
     let Int_lastLeft = Int_moveOriginX;
     Struct_Window_targetWindow.DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
+
+    Struct_Window_targetWindow.DOMobj_frame.style.transition = "none";//25.3.19 (窗口resize缓动更新) 窗口拖动时取消缓动(因为会与运动模糊的旋转操作冲突)
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
@@ -172,6 +179,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
         Struct_Window_targetWindow.DOMobj_frame.style.transform = "";
 
         Struct_Window_targetWindow.DOMobj_locator.style.filter = "";
+        Struct_Window_targetWindow.DOMobj_frame.style.transition = "";//还原缓动属性
 
         synchronizeWindowRect(Struct_Window_targetWindow);//new
 
@@ -282,10 +290,11 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
     let Int_len = Arr_Struct_Window_allWindows.length;//等会遍历窗口用
 
     for (let Int_i = 0; Int_i < Int_len; Int_i++) {
-        //两次剔除需要分开,因为窗口机器大量的情况下,即使把下面的窗口全部不给模糊,也会卡,必须直接ban掉显示,并且上面模糊之后会透出下面不模糊的
+        //两次剔除需要分开,因为窗口极其大量的情况下,即使把下面的窗口全部不给模糊,也会卡,必须直接ban掉显示,并且上面模糊之后会透出下面不模糊的，导致撕裂和叠色
         //第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
         //这里用visibility比display更快 //我是sb 肯定display更快啊!24.10.4
         applyDisplayStatus(Arr_Struct_Window_allWindows[Int_i]);//老的已删,这个操作已经被独立出来作为函数了
+        Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transition = "none";//25.3.19 (窗口resize缓动更新) 窗口拖动时取消缓动(因为会与运动模糊的旋转操作冲突)
     }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOT里面,先这样吧 PR 2024.10.3
 
     document.onpointermove = function (event) {
@@ -336,6 +345,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
                 //Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.display = "block";
             }
+            Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transition = "";//还原缓动属性 这个到时候要加入属性
         }
 
         document.onpointerup = null;
@@ -513,7 +523,7 @@ function /*void*/ updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGf
     let Float_theta = Math.atan2(Int_dy, Int_dx) / Math.PI * 180;
     let Float_distance = Math.sqrt(Int_dx * Int_dx + Int_dy * Int_dy);
     Struct_Window_targetWindow.DOMobj_locator.style.transform = "rotate(" + Float_theta + "deg)";
-    Struct_Window_targetWindow.DOMobj_frame.style.transform = "rotate(" + (-Float_theta) + "deg)";
+    Struct_Window_targetWindow.DOMobj_rotateBase.style.transform = "rotate(" + (-Float_theta) + "deg)";
     DOMobj_SVGfilterEffectContainer.setAttribute("stdDeviation", Float_distance / 2 + ",0");
 }
 

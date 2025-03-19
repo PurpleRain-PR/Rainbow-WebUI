@@ -37,6 +37,14 @@
     transform-origin: left top;
 }
 
+.windowRotateBase {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: inline-block;
+    overflow: visible;
+    transform-origin: left top;
+}
 .window {
     position: absolute;
     left: 0;
@@ -50,6 +58,7 @@
     overflow: hidden;
     cursor: crosshair;
     transform-origin: left top;
+    transition: all 0.5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
 .maximizedWindow {
@@ -127,4 +136,10 @@
     /* 添加前缀以解决兼容性问题 */
     backdrop-filter: blur(1.5px);
     background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 10px, transparent 10px, transparent 20px);
+}
+.window::-webkit-resizer {
+    z-index: 1;
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255, 65, 65, 0.295);
 }
