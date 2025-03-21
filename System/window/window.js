@@ -43,7 +43,9 @@ function /*void*/ initDesktop(/*void*/) {
     DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase, event); };
 }
 
-function /*Struct_Window*/ initWindow(Int_left, Int_right, Int_width, Int_height) {
+function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height) {
+    Int_width = 60;
+    Int_height = 30;
     //get windowbase //deleted,new method use windowBase as a global variable
     let Struct_Window_newWindow = new Struct_Window();
 
@@ -80,7 +82,8 @@ function /*Struct_Window*/ initWindow(Int_left, Int_right, Int_width, Int_height
     Struct_Window_newWindow.DOMobj_frame.appendChild(Struct_Window_newWindow.DOMobj_cover);
 
     Struct_Window_newWindow.DOMobj_cover.setAttribute("style", "top:0;left:0;visibility:hidden;");
-    Struct_Window_newWindow.DOMobj_locator.setAttribute("style", "top:0;left:0;display:block;visibility:visible;");
+    Struct_Window_newWindow.DOMobj_locator.setAttribute("style", "top:0;left:0;display:block;");
+    Struct_Window_newWindow.DOMobj_frame.setAttribute("style", "width:" + Int_width + "px;height:" + Int_height + "px;");
 
     Struct_Window_newWindow.Bool_isMaximized = false;
     Struct_Window_newWindow.DOMobj_frame.onpointerdown = function () { if (Struct_Window_newWindow.Int_pileIndex !== 1) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
@@ -163,7 +166,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
 
             updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, 0, 0, 0, 0);
             Struct_Window_targetWindow.DOMobj_locator.style.transform = "";
-            Struct_Window_targetWindow.DOMobj_frame.style.transform = "";
+            Struct_Window_targetWindow.DOMobj_rotateBase.style.transform = "";
             //Struct_Window_targetWindow.DOMobj_locator.style.filter = "";
         }
 
@@ -176,7 +179,7 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
         Struct_Window_targetWindow.DOMobj_locator.style.top = Int_lastTop + "px";
         updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, 0, 0, 0, 0);
         Struct_Window_targetWindow.DOMobj_locator.style.transform = "";
-        Struct_Window_targetWindow.DOMobj_frame.style.transform = "";
+        Struct_Window_targetWindow.DOMobj_rotateBase.style.transform = "";//这里很重要，因为在拖动结束需要最大化时，frame的position fixed会与locator,rotateBase的transform冲突，导致无法定位到视口 2025.3.20 -PR
 
         Struct_Window_targetWindow.DOMobj_locator.style.filter = "";
         Struct_Window_targetWindow.DOMobj_frame.style.transition = "";//还原缓动属性
@@ -233,13 +236,13 @@ function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
     synchronizeWindowRect(Struct_Window_targetWindow);//new
-    /*bug fixed 2024.4.11 style.something is ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
+    /*bug fixed 2024.4.11 style.something is CHAR ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
     //save restore attributes
 
-    DOMobj_targetWindow.style.height = "";//clear attributes
-    DOMobj_targetWindow.style.width = "";
-    DOMobj_targetWindow.style.left = "";
-    DOMobj_targetWindow.style.top = "";
+    DOMobj_targetWindow.style.height = innerHeight + "px";//clear attributes
+    DOMobj_targetWindow.style.width = innerWidth + "px";
+    DOMobj_targetWindow.style.top = -DOMobj_windowBase.offsetTop - Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top + "px";
+    DOMobj_targetWindow.style.left = -DOMobj_windowBase.offsetLeft - Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left + "px";
 
     DOMobj_targetWindow.setAttribute("class", "maximizedWindow");
     //惨痛教训:DOM元素的class属性只读,必须用setAttr
@@ -252,6 +255,11 @@ function /*void*/ restoreWindow(Struct_Window_targetWindow) {
     //restore attributes
     applyWindowRect(Struct_Window_targetWindow);//new
 
+    // DOMobj_targetWindow.style.position = "";
+    DOMobj_targetWindow.style.top = "";
+    DOMobj_targetWindow.style.left = "";
+    // DOMobj_targetWindow.style.height = "";//clear attributes
+    // DOMobj_targetWindow.style.width = "";
     DOMobj_targetWindow.setAttribute("class", "window");
     //惨痛教训:DOM元素的class属性只读,必须用setAttr
     Struct_Window_targetWindow.Bool_isMaximized = false;
@@ -318,7 +326,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
             }
             else {//这里会触发"提交"卡顿,具体原因不明,有待分析
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
-                Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_rotateBase.style.transform = "";
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.visibility = "hidden";
                 // Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = ""; //原因定位了,就在这里! 重新显示的时候css filter的url()函数因为DOM元素太多导致查找极其慢
             }
@@ -339,7 +347,7 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
             if (!Arr_Struct_Window_allWindows[Int_i].Bool_isHidden) {
                 updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, 0, 0, 0, 0);
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.transform = "";
-                Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transform = "";
+                Arr_Struct_Window_allWindows[Int_i].DOMobj_rotateBase.style.transform = "";//这里很重要，因为在拖动结束需要最大化时，frame的position fixed会与locator,rotateBase的transform冲突，导致无法定位到视口 2025.3.20 -PR
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.left = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_left + "px";
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.top = Arr_Struct_Window_allWindows[Int_i].Struct_StdWindowRect_windowRect.Int_top + "px";
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = "";
@@ -625,8 +633,8 @@ function /*int*/ isWindowCoveredByWindow(Struct_Window_targetWindow, Struct_Wind
 function /*void*/ synchronizeWindowRect(Struct_Window_targetWindow) {//从DOM读取(同步)位置坐标,存入window   Rect
     Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_top = Struct_Window_targetWindow.DOMobj_locator.offsetTop;
     Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_left = Struct_Window_targetWindow.DOMobj_locator.offsetLeft;
-    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = Struct_Window_targetWindow.DOMobj_frame.offsetWidth;
-    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = Struct_Window_targetWindow.DOMobj_frame.offsetHeight;
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_width = Struct_Window_targetWindow.DOMobj_frame.clientWidth;
+    Struct_Window_targetWindow.Struct_StdWindowRect_windowRect.Int_height = Struct_Window_targetWindow.DOMobj_frame.clientHeight;//修最大化再还原窗口时窗口变大的bug(原因是offset宽高计算带边框，每一次同步再应用时都会累加) 2025.3.20 -PR
 }
 
 function /*void*/ applyWindowRect(Struct_Window_targetWindow) {//把windowRect存有的坐标应用到DOM

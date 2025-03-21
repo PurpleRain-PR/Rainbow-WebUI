@@ -10,7 +10,8 @@
     height: 0;
     /* width: 10px;
     height: 10px;
-    background-color: red; */
+    background-color: red;
+        * //* debug config */
     overflow: visible;
 }
 
@@ -28,15 +29,7 @@
     filter: url(#SVGfilterEffect-windowBaseDragHandle);
 }
 
-.windowLocator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: inline-block;
-    overflow: visible;
-    transform-origin: left top;
-}
-
+.windowLocator,
 .windowRotateBase {
     position: absolute;
     top: 0;
@@ -45,6 +38,7 @@
     overflow: visible;
     transform-origin: left top;
 }
+
 .window {
     position: absolute;
     left: 0;
@@ -58,19 +52,7 @@
     overflow: hidden;
     cursor: crosshair;
     transform-origin: left top;
-    transition: all 0.5s cubic-bezier(0.1, 1, 0.6, 1);
-}
-
-.maximizedWindow {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    resize: none;
-    background-color: rgb(61, 93, 255);
-    overflow: hidden;
-    cursor: crosshair;
+    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
 .nav {
@@ -92,11 +74,6 @@
     cursor: move;
 }
 
-.maximizedWindow .nav .windowDragBox {
-    top: -100%;
-    cursor: no-drop;
-}
-
 .nav .closeButton {
     position: absolute;
     right: 0;
@@ -105,11 +82,6 @@
     height: 30px;
     background-color: rgba(255, 119, 0, 0.822);
     cursor: pointer;
-}
-
-.maximizedWindow .nav .closeButton {
-    top: -100%;
-    cursor: no-drop;
 }
 
 .nav .maximizeButton {
@@ -122,6 +94,28 @@
     cursor: pointer;
 }
 
+.maximizedWindow {
+    position: absolute;
+    /* left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%; */
+    resize: none;
+    background-color: rgb(61, 93, 255);
+    overflow: hidden;
+    cursor: crosshair;
+    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
+}
+
+.maximizedWindow .nav .windowDragBox {
+    top: -100%;
+    cursor: no-drop;
+}
+
+.maximizedWindow .nav .closeButton {
+    top: -100%;
+    cursor: no-drop;
+}
 .maximizedWindow .nav .maximizeButton {
     right: 0;
 }
