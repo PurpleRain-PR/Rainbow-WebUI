@@ -14,6 +14,7 @@ function /*Struct_Window*/ Struct_Window() {
     this.Bool_needToBeUpdated = undefined;
     this.Bool_isMaximized = undefined;
     this.Bool_isHidden = undefined;
+    this.Bool_isCovered = undefined;
     this.Str_title = undefined;
     this.Struct_StdWindowRect_windowRect = new Struct_StdWindowRect();//new
     this.Int_indexOfPileIndex = undefined;
@@ -86,7 +87,12 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height) 
     Struct_Window_newWindow.DOMobj_frame.setAttribute("style", "width:" + Int_width + "px;height:" + Int_height + "px;");
 
     Struct_Window_newWindow.Bool_isMaximized = false;
-    Struct_Window_newWindow.DOMobj_frame.onpointerdown = function () { if (Struct_Window_newWindow.Int_pileIndex !== 1) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
+    Struct_Window_newWindow.Bool_isCovered = false;
+    Struct_Window_newWindow.DOMobj_frame.onpointerdown = function () {
+        if (Struct_Window_newWindow.Bool_isCovered && isWindowOverlappedByOthers(Struct_Window_newWindow))
+            moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
+    };//2024.4.11 tip:if not judge the pileindex then every time "moveWindow...Top" will deny any other process
+    //检测方式改了，以前是pileindex=1才是顶层，现在是只要不cover就是顶层，所以新增了属性来存储cover状态
     Struct_Window_newWindow.DOMobj_maximizeButton.onclick = function () { changeMaximizeStatus(Struct_Window_newWindow); };
     Struct_Window_newWindow.DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     Struct_Window_newWindow.DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
@@ -103,7 +109,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height) 
     addWindowToGWOT(Struct_Window_newWindow.Int_handle);
     Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
     Struct_Window_newWindow.Int_indexOfPileIndex = 1;//Debug Config
-    Struct_Window_newWindow.DOMobj_maximizeButton.textContent = String(Struct_Window_newWindow.Int_handle);//Debug Config
+    // Struct_Window_newWindow.DOMobj_maximizeButton.textContent = String(Struct_Window_newWindow.Int_handle);//Debug Config
 
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
 
@@ -125,7 +131,10 @@ function /*void*/ asyncUpdateAllWindow() {
         /*!isWindowInScreen(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])
         || */isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
-
+    if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])) {
+        uncoverWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    }
+    //内部更改结束
     //处理系统外部更改
     if (Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_needToBeUpdated) {//(外部的更改)被标记更改的才更新
         applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
@@ -234,6 +243,8 @@ function /*void*/ changeMaximizeStatus(Struct_Window_window) {
 
 function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
+
+    moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow);
 
     synchronizeWindowRect(Struct_Window_targetWindow);//new
     /*bug fixed 2024.4.11 style.something is CHAR ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
@@ -425,18 +436,18 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
                 if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex !== 0) {//是0就代表这个窗口在初始化之中
                     Arr_Struct_Window_allWindows[Int_i].Int_pileIndex++;//adjust the index
                 }
-                if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window //现在初始化的时候在执行此函数之前就执行了syncRect,所以不需要检测rect是不是undefined
-                    coverWindow(Arr_Struct_Window_allWindows[Int_i]);
-                }
             }
-            Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
+            if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window //现在初始化的时候在执行此函数之前就执行了syncRect,所以不需要检测rect是不是undefined
+                coverWindow(Arr_Struct_Window_allWindows[Int_i]);
+            }//这里要把这个if提出来，因为现在的窗口实时更新机制导致有可能正在操作的窗口不会是pileindex=1(只要没重叠就不会主动更新自己的pileindex)所以比较pileindex大小的剔除会导致pileindex=1的窗口移到别的未覆盖窗口上面时不会把下面的窗口覆盖 2025.3.23 YCH
+            // Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
         }
     }
     Struct_Window_targetWindow.Int_pileIndex = 1;//set top index
 
     uncoverWindow(Struct_Window_targetWindow);
 
-    Struct_Window_targetWindow.DOMobj_closeButton.textContent = "i=" + Struct_Window_targetWindow.Int_pileIndex;//Debug Config
+    // Struct_Window_targetWindow.DOMobj_closeButton.textContent = "i=" + Struct_Window_targetWindow.Int_pileIndex;//Debug Config
 
 
     if (Struct_Window_lastTopWindow !== undefined && Struct_Window_lastTopWindow.DOMobj_frame.nextSibling !== undefined) {//adjust the DOM sequence
@@ -453,7 +464,7 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
 }//2024.4.11
 
 function /*bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
-    return (updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);
+    return (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);//以前每次查询都会计算一遍，现在已经有持续运行的异步更新了，所以改为查询GWOT 2025.3.22 PR
 }//2024.4.15
 
 function /*bool*/ isWindowInScreen(Struct_Window_window) {
@@ -465,10 +476,12 @@ function /*bool*/ isWindowInScreen(Struct_Window_window) {
 }
 
 function /*void*/ coverWindow(Struct_Window_targetWindow) {
+    Struct_Window_targetWindow.Bool_isCovered = true;
     Struct_Window_targetWindow.DOMobj_cover.style.visibility = "visible";//提升渲染性能
 }
 
 function /*void*/ uncoverWindow(Struct_Window_targetWindow) {//uncover the window
+    Struct_Window_targetWindow.Bool_isCovered = false;
     Struct_Window_targetWindow.DOMobj_cover.style.visibility = "hidden";//提升渲染性能
 }
 
@@ -584,11 +597,11 @@ function /*void*/ asyncUpdateGWOT(/*void*/) {
         Arr_Struct_Window_allWindows[Arr_Int_indexOfGWOTToBeAsyncUpdated[1]]);//计算,更新
 }
 
-function /*void*/ updateAllOverlapStatusOfWindow(Struct_Window_targetWindow) {//应该可以被refreshGWOT替代了,效率更高,这个函数当时测试用的,有2倍的重复遍历
-    for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
-        updateWindowOverlapStatus(Struct_Window_targetWindow, Arr_Struct_Window_allWindows[Int_i]);
-    }
-}
+// function /*void*/ updateAllOverlapStatusOfWindow(Struct_Window_targetWindow) {//应该可以被refreshGWOT替代了,效率更高,这个函数当时测试用的,有2倍的重复遍历
+//     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
+//         updateWindowOverlapStatus(Struct_Window_targetWindow, Arr_Struct_Window_allWindows[Int_i]);
+//     }
+// }
 
 function /*int*/ getMaxHandle(/*void*/) {
     if (Arr_Struct_Window_allWindows.length === 0) { return 0; }
@@ -599,7 +612,7 @@ function /*int*/ getMaxHandle(/*void*/) {
     return Int_maxHandle;
 }
 
-function /*int*/ isWindowFullCoveredByOthers(Struct_Window_targetWindow) {
+function /*bool*/ isWindowFullCoveredByOthers(Struct_Window_targetWindow) {
     if (Arr_Struct_Window_allWindows.length === 0) { return false; }//防呆
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
         if (Struct_Window_targetWindow.Int_handle !== (Arr_Struct_Window_allWindows[Int_i]).Int_handle) {
@@ -609,7 +622,17 @@ function /*int*/ isWindowFullCoveredByOthers(Struct_Window_targetWindow) {
     return false;
 }
 
-function /*int*/ isWindowCoveredByWindow(Struct_Window_targetWindow, Struct_Window_coverWindow) {
+function /*bool*/ isWindowOverlappedByOthers(Struct_Window_targetWindow) {
+    if (Arr_Struct_Window_allWindows.length === 0) { return false; }//防呆
+    for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
+        if (Struct_Window_targetWindow.Int_handle !== (Arr_Struct_Window_allWindows[Int_i]).Int_handle) {
+            if (isWindowOverlap(Struct_Window_targetWindow, Arr_Struct_Window_allWindows[Int_i])) { return true; }
+        }
+    }
+    return false;
+}
+
+function /*bool*/ isWindowCoveredByWindow(Struct_Window_targetWindow, Struct_Window_coverWindow) {
     if (queryWindowOverlapStatus(Struct_Window_targetWindow, Struct_Window_coverWindow) >= 0) { return false; }//没重叠,不通过 //进一步提高判断效率
     if ((Struct_Window_coverWindow.Int_indexOfPileIndex < Struct_Window_targetWindow.Int_indexOfPileIndex/*组层级更高,通过*/
         || (Struct_Window_coverWindow.Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex/*组层级一致,组内层级更高,通过*/
