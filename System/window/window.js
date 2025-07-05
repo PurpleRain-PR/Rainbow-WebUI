@@ -321,9 +321,9 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
         DOMobj_moveTarget.style.left = ((Int_left + Int_lastLeft) / 2) + "px";
         DOMobj_moveTarget.style.top = ((Int_top + Int_lastTop) / 2) + "px";//加完了，这下舒服了，真绕了好多弯子啊
-        //写，必须写！不写偏移观感一坨史！24.8.18 
+        //写，必须写！不写偏移观感一坨史！24.8.18
         //不写了，写的话还要套一层旋转，DOM元素不能再多了，比毕竟没人天天把屏幕拖来拖去，就这样吧 、、
-        //原来是bug，我说呢，frame改之后加了旋转，我偏移得加在locator上啊 
+        //原来是bug，我说呢，frame改之后加了旋转，我偏移得加在locator上啊
         //我是sb吗，我加windowbase啊，加什么locator啊!
         updateWindowBackground(DOMobj_dragBox, (Int_left + Int_lastLeft) / 2, (Int_top + Int_lastTop) / 2);
         updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, Int_lastTop, Int_lastLeft, Int_top, Int_left);
@@ -411,7 +411,7 @@ function /*Struct_Window*/ getWindowByHandle(Int_targetHandle) {
         }
     }
     return Struct_Window_targetWindow;
-}//2024.4.8 
+}//2024.4.8
 
 // function /*void*/ swapWindowSequenceOfDOM(Struct_Window_window1, Struct_Window_window2) {
 //     Struct_Window_window2.DOMobj_frame.nextSibling === Struct_Window_window1.DOMobj_frame
@@ -497,7 +497,7 @@ function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_w
         Int_HandleL = Struct_Window_window2.Int_handle;
         Int_HandleS = Struct_Window_window1.Int_handle;
     }
-    return Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleL - 1];
+    return Arr_Int_globalWindowOverlapTable[((Int_HandleL - 1) * (Int_HandleL - 2) >> 1) + Int_HandleS - 1];
 }
 
 function /*int*/ updateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {//计算,返回,并且更新到GWOT
