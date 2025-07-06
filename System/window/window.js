@@ -1,6 +1,6 @@
 "use strict";
 
-//sturcts
+//sturctures
 function /*Struct_Window*/ Struct_Window() {
     this.Int_handle = undefined;
     this.DOMobj_frame = undefined;
@@ -441,7 +441,7 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
     let Struct_Window_lastTopWindow = undefined;
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
         //为什么这里改成倒序遍历函数会失效啊  //解决此大bug详见开发日志 2024.10.17 PR
-        if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
+        if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {//窗口组堆叠次序（还没写）
             if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
                 //bug fixed 2024.4.10 mistakingly spelled the "pileindex" as "indexOfPileIndex"
                 Struct_Window_lastTopWindow = Arr_Struct_Window_allWindows[Int_i];
@@ -478,7 +478,8 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
 }//2024.4.11
 
 function /*bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
-    return (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);//以前每次查询都会计算一遍，现在已经有持续运行的异步更新了，所以改为查询GWOT 2025.3.22 PR
+    return (Struct_Window_window1.Int_handle !== Struct_Window_window2.Int_handle) &&
+        (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);//以前每次查询都会计算一遍，现在已经有持续运行的异步更新了，所以改为查询GWOT 2025.3.22 PR
 }//2024.4.15
 
 function /*bool*/ isWindowInScreen(Struct_Window_window) {
