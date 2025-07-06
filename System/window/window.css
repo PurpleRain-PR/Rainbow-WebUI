@@ -61,11 +61,10 @@
     left: 0;
     width: 100%;
     height: 30px;
-    line-height: 30px;
     background-color: rgba(255, 61, 61, 0.519);
 }
 
-.nav .windowDragBox {
+.windowDragBox {
     position: absolute;
     top: 0;
     left: 0;
@@ -75,7 +74,7 @@
     cursor: move;
 }
 
-.nav .closeButton {
+.closeButton {
     position: absolute;
     right: 0;
     top: 0;
@@ -83,10 +82,9 @@
     height: 30px;
     background-color: rgba(255, 119, 0, 0.822);
     cursor: pointer;
-    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
-.nav .maximizeButton {
+.maximizeButton {
     position: absolute;
     right: 30px;
     top: 0;
@@ -94,7 +92,6 @@
     height: 30px;
     background-color: rgba(0, 200, 255, 0.822);
     cursor: pointer;
-    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
 .maximizedWindow {
@@ -102,8 +99,10 @@
     /* left: 0;
     top: 0;
     width: 100%;
-    height: 100%; */
+    height: 100%; 这是以前最大化用fixed实现留下的遗物，为了向动画妥协，用了absolute+js计算视口位置*/
     resize: none;
+    border: 0px solid #8fbeff;
+    border-radius: 0px;
     background-color: rgb(61, 93, 255);
     overflow: hidden;
     cursor: crosshair;
@@ -116,7 +115,7 @@
 }
 
 .maximizedWindow .nav .closeButton {
-    top: -100%;
+    right: -30px;
     cursor: no-drop;
 }
 
@@ -134,7 +133,6 @@
     /* 添加前缀以解决兼容性问题 */
     backdrop-filter: blur(1.5px);
     background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 10px, transparent 10px, transparent 20px);
-    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
 .window::-webkit-resizer {
@@ -142,4 +140,28 @@
     width: 50px;
     height: 50px;
     background-color: rgba(255, 65, 65, 0.295);
+}
+
+.windowTitle {
+    position: absolute;
+    top: 0;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+}
+
+.window .nav .windowTitle {
+    left: 30px;
+    transform: translateX(0);
+}
+
+.maximizedWindow .nav .windowTitle {
+    left: calc(50%);
+    transform: translateX(-50%);
+}
+
+.closeButton,
+.maximizeButton,
+.windowTitle {
+    transition: all .5s cubic-bezier(0.3, 0, 0, 1) .25s;
 }

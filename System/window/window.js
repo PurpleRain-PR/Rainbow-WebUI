@@ -11,6 +11,8 @@ function /*Struct_Window*/ Struct_Window() {
     this.DOMobj_cover = undefined;
     this.DOMobj_locator = undefined;
     this.DOMobj_rotateBase = undefined;
+    this.DOMobj_title = undefined;
+    this.DOMobj_icon = undefined;
     this.Bool_needToBeUpdated = undefined;
     this.Bool_isMaximized = undefined;
     this.Bool_isHidden = undefined;
@@ -47,9 +49,8 @@ function /*void*/ initDesktop(/*void*/) {
 function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, Str_title) {
     //get windowbase //deleted,new method use windowBase as a global variable
     let Struct_Window_newWindow = new Struct_Window();
-    Struct_Window_newWindow.Str_title = Str_title || "LOADING";//任何空格都会被浏览器自动删除，这里占位，防止childNodes[0]缺失
+    Struct_Window_newWindow.Str_title = Str_title;
 
-    console.log(Str_title);
     Int_width = Int_width || 120;
     Int_height = Int_height || 60;
 
@@ -68,7 +69,14 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_navigator = document.createElement("div");//navigator
     Struct_Window_newWindow.DOMobj_navigator.setAttribute("class", "nav");
     Struct_Window_newWindow.DOMobj_frame.appendChild(Struct_Window_newWindow.DOMobj_navigator);
-    Struct_Window_newWindow.DOMobj_navigator.innerText = "n";
+
+    Struct_Window_newWindow.DOMobj_title = document.createElement("div");//title
+    Struct_Window_newWindow.DOMobj_title.setAttribute("class", "windowTitle");
+    Struct_Window_newWindow.DOMobj_navigator.appendChild(Struct_Window_newWindow.DOMobj_title);
+
+    Struct_Window_newWindow.DOMobj_icon = document.createElement("div");//icon
+    Struct_Window_newWindow.DOMobj_icon.setAttribute("class", "windowIcon");
+    Struct_Window_newWindow.DOMobj_navigator.appendChild(Struct_Window_newWindow.DOMobj_icon);
 
     Struct_Window_newWindow.DOMobj_dragBox = document.createElement("div");//dragBox
     Struct_Window_newWindow.DOMobj_dragBox.setAttribute("class", "windowDragBox");
@@ -100,6 +108,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_maximizeButton.onclick = function () { changeMaximizeStatus(Struct_Window_newWindow); };
     Struct_Window_newWindow.DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     Struct_Window_newWindow.DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
+    Struct_Window_newWindow.DOMobj_frame.mouseenter = function () { console.log(Struct_Window_newWindow.Int_handle); if (!Struct_Window_newWindow.Bool_isCovered) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };
     applyWindowTitle(Struct_Window_newWindow);
 
     /*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
@@ -291,6 +300,7 @@ function /*void*/ restoreWindow(Struct_Window_targetWindow) {
 }
 
 function /*void*/ closeWindow(Struct_Window_targetWindow) {
+    if (Struct_Window_targetWindow.Bool_isMaximized) return;
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {//adjust other windows' index
         if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
             if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
@@ -454,7 +464,7 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
             if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window //现在初始化的时候在执行此函数之前就执行了syncRect,所以不需要检测rect是不是undefined
                 coverWindow(Arr_Struct_Window_allWindows[Int_i]);
             }//这里要把这个if提出来，因为现在的窗口实时更新机制导致有可能正在操作的窗口不会是pileindex=1(只要没重叠就不会主动更新自己的pileindex)所以比较pileindex大小的剔除会导致pileindex=1的窗口移到别的未覆盖窗口上面时不会把下面的窗口覆盖 2025.3.23 YCH
-            // Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
+            //Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
         }
     }
     Struct_Window_targetWindow.Int_pileIndex = 1;//set top index
@@ -692,8 +702,8 @@ function /*void*/ applyDisplayStatus(Struct_Window_targetWindow) {
     // Struct_Window_targetWindow.DOMobj_locator.style.visibility = Struct_Window_targetWindow.Bool_isHidden ? "hidden" : "visible";
 }
 
-function /*void*/ applyWindowTitle(Struct_Window_targetWindow) {//注意，这里不能传入纯空字符串（不可见字符也被视为该类），浏览器会删去text节点，导致childNodes[0]选择错误
-    Struct_Window_targetWindow.DOMobj_navigator.childNodes[0].textContent = Struct_Window_targetWindow.Str_title;//这样不会更改子元素的内容，也不会删除子元素
+function /*void*/ applyWindowTitle(Struct_Window_targetWindow) {
+    Struct_Window_targetWindow.DOMobj_title.textContent = Struct_Window_targetWindow.Str_title;
 }
 
 //Debug Configs

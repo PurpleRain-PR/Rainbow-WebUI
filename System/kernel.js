@@ -38,7 +38,7 @@ function /*void*/ systemMainIntervalControl() {
     //↑这个前面的系数(现在是4.2),应该是可以测出来的,也就是interval设置为1ms时实际间隔的毫秒数,但是要测算(否则会导致不饱和或者过饱和),以后写,现在先这样吧
     let Int_targetSysIntervalNum = ((Int_fullSysIntervalNum * 3 + Int_maxSysIntervalNum) >> 2);
     DOMobj_windowBase.firstChild.textContent =
-        "cStep " + String(Int_newSysIntervalCreateStep) + ",full "
+        "Debug Config:  cStep " + String(Int_newSysIntervalCreateStep) + ",full "
         + String(Int_fullSysIntervalNum) + ",count "
         + String(Int_sysIntervalExecuteCount) + ",length "
         + String(Arr_Int_sysMainIntervalID.length) + ",target "
