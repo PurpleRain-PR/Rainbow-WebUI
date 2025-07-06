@@ -19,7 +19,7 @@ function newWindowButton() {
   // 使用firstChild代替children[0]，因为firstChild的访问速度更快
 
   // 给按钮增加侦听事件并回调initWindow函数创建窗口
-  button.addEventListener("click", function () { initWindow(0, 0, 0, 0); });
+  button.addEventListener("click", function () { initWindow(0, 0, 0, 0, Math.random().toString(36).substring(2, 15)); });
 }
 
 // 调用函数

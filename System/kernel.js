@@ -51,7 +51,7 @@ function /*void*/ systemMainIntervalControl() {
     Int_sysIntervalExecuteCount = 0;//清零计数器
     if (Arr_Int_sysMainIntervalID.length < Int_targetSysIntervalNum) {//上调
         if (Int_newSysIntervalCreateStep < Int_maxSysIntervalCreateStep)//步数自增(只有上调的时候才要自增,所以放里面) //如果放里面,则限位一定在它后面,在stopsysinterval设为false前面,所以只能放外面 //又可以放里面了,把stop设为false那句放外面,因为每轮循环都要重置状态 YCH 24.10.26
-            Int_newSysIntervalCreateStep += 2;//++有几率自锁
+            Int_newSysIntervalCreateStep += 2;//用++有几率自锁，毕竟激进一点也不是什么坏事(
         for (let Int_i = Int_newSysIntervalCreateStep; Int_i > 0; Int_i--)
             Arr_Int_sysMainIntervalID.push(setInterval(systemMainInterval, 1));
     }

@@ -44,11 +44,14 @@ function /*void*/ initDesktop(/*void*/) {
     DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase, event); };
 }
 
-function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height) {
-    Int_width = 60;
-    Int_height = 30;
+function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, Str_title) {
     //get windowbase //deleted,new method use windowBase as a global variable
     let Struct_Window_newWindow = new Struct_Window();
+    Struct_Window_newWindow.Str_title = Str_title || "LOADING";//任何空格都会被浏览器自动删除，这里占位，防止childNodes[0]缺失
+
+    console.log(Str_title);
+    Int_width = Int_width || 120;
+    Int_height = Int_height || 60;
 
     Struct_Window_newWindow.DOMobj_locator = document.createElement("div");//locator
     Struct_Window_newWindow.DOMobj_locator.setAttribute("class", "windowLocator");
@@ -65,6 +68,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height) 
     Struct_Window_newWindow.DOMobj_navigator = document.createElement("div");//navigator
     Struct_Window_newWindow.DOMobj_navigator.setAttribute("class", "nav");
     Struct_Window_newWindow.DOMobj_frame.appendChild(Struct_Window_newWindow.DOMobj_navigator);
+    Struct_Window_newWindow.DOMobj_navigator.innerText = "n";
 
     Struct_Window_newWindow.DOMobj_dragBox = document.createElement("div");//dragBox
     Struct_Window_newWindow.DOMobj_dragBox.setAttribute("class", "windowDragBox");
@@ -96,6 +100,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height) 
     Struct_Window_newWindow.DOMobj_maximizeButton.onclick = function () { changeMaximizeStatus(Struct_Window_newWindow); };
     Struct_Window_newWindow.DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     Struct_Window_newWindow.DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
+    applyWindowTitle(Struct_Window_newWindow);
 
     /*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
     //save attributes for the first time
@@ -157,6 +162,9 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
     Struct_Window_targetWindow.DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
 
     Struct_Window_targetWindow.DOMobj_frame.style.transition = "none";//25.3.19 (窗口resize缓动更新) 窗口拖动时取消缓动(因为会与运动模糊的旋转操作冲突)
+
+    let Int_stopBlurringTimeoutID = undefined;
+
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
         let Int_top = Int_moveOriginY + event.clientY - Int_cursorY;
@@ -168,6 +176,12 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
 
             //Struct_Window_targetWindow.DOMobj_locator.style.filter = "url(#SVGfilterEffect-window)";
             updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, Int_lastLeft, Int_lastTop, Int_left, Int_top);
+
+            if (Int_stopBlurringTimeoutID) clearTimeout(Int_stopBlurringTimeoutID);
+            Int_stopBlurringTimeoutID = setTimeout(() => {
+                updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffect, 0, 0, 0, 0);
+                clearTimeout(Int_stopBlurringTimeoutID);
+            }, 100);//0.1秒指针不动时取消运动模糊（因为拖动事件触发频率有限制，时间分辨率低，为了观感，这个运动模糊模块从设计初期就是基于空间的）
         }
         else {
             Struct_Window_targetWindow.DOMobj_locator.style.left = Int_left + "px";
@@ -675,6 +689,10 @@ function /*void*/ synchornizeDisplayStatus(Struct_Window_targetWindow) {
 function /*void*/ applyDisplayStatus(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_locator.style.display = Struct_Window_targetWindow.Bool_isHidden ? "none" : "block";
     // Struct_Window_targetWindow.DOMobj_locator.style.visibility = Struct_Window_targetWindow.Bool_isHidden ? "hidden" : "visible";
+}
+
+function /*void*/ applyWindowTitle(Struct_Window_targetWindow) {//注意，这里不能传入纯空字符串（不可见字符也被视为该类），浏览器会删去text节点，导致childNodes[0]选择错误
+    Struct_Window_targetWindow.DOMobj_navigator.childNodes[0].textContent = Struct_Window_targetWindow.Str_title;//这样不会更改子元素的内容，也不会删除子元素
 }
 
 //Debug Configs

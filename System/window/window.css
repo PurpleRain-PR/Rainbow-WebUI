@@ -44,8 +44,8 @@
     left: 0;
     top: 0;
     resize: both;
-    min-height: 30px;
-    min-width: 60px;
+    min-height: 60px;
+    min-width: 120px;
     border-radius: 10px;
     background-color: rgb(61, 93, 255);
     border: 3px solid #8fbeff;
@@ -61,6 +61,7 @@
     left: 0;
     width: 100%;
     height: 30px;
+    line-height: 30px;
     background-color: rgba(255, 61, 61, 0.519);
 }
 
@@ -82,6 +83,7 @@
     height: 30px;
     background-color: rgba(255, 119, 0, 0.822);
     cursor: pointer;
+    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
 .nav .maximizeButton {
@@ -92,6 +94,7 @@
     height: 30px;
     background-color: rgba(0, 200, 255, 0.822);
     cursor: pointer;
+    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
 
 .maximizedWindow {
@@ -116,6 +119,7 @@
     top: -100%;
     cursor: no-drop;
 }
+
 .maximizedWindow .nav .maximizeButton {
     right: 0;
 }
@@ -130,7 +134,9 @@
     /* 添加前缀以解决兼容性问题 */
     backdrop-filter: blur(1.5px);
     background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 10px, transparent 10px, transparent 20px);
+    transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
 }
+
 .window::-webkit-resizer {
     z-index: 1;
     width: 50px;
