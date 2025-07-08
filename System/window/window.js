@@ -17,6 +17,7 @@ function /*Struct_Window*/ Struct_Window() {
     this.Bool_isMaximized = undefined;
     this.Bool_isHidden = undefined;
     this.Bool_isCovered = undefined;
+    this.Bool_hasRecentlyChangedHiddenState = undefined;
     this.Str_title = undefined;
     this.Struct_StdWindowRect_windowRect = new Struct_StdWindowRect();//new
     this.Int_indexOfPileIndex = undefined;
@@ -50,10 +51,14 @@ function /*void*/ initDesktop(/*void*/) {
 function /*void*/ initWindowResizeSynchronizer(/*void*/) {
     ROobj_windowBaseResizeObserver = new ResizeObserver(function (entries) {
         for (let entry of entries) {
-            if (!entry.target.Struct_Window_thisWindow.Bool_isMaximized && Bool_isMouseLPressed)//防止最大化时破坏窗口位置信息，保证这个resize只用来监听手动更改窗口大小
-                synchronizeWindowRect(entry.target.Struct_Window_thisWindow);
-            updateCoverStateOfOverlappedWindow(entry.target.Struct_Window_thisWindow);
-            console.log(2);
+            if (entry.target.Struct_Window_thisWindow.Bool_hasRecentlyChangedHiddenState) {
+                //还要防止隐藏和显现窗口时更改display状态导致的resize检测，这里新增一个变量来存，若更改了状态，那么这里触发时就抵消掉
+                entry.target.Struct_Window_thisWindow.Bool_hasRecentlyChangedHiddenState = false;
+            } else {
+                if (Bool_isMouseLPressed && !entry.target.Struct_Window_thisWindow.Bool_hasRecentlyChangedHiddenState && !entry.target.Struct_Window_thisWindow.Bool_isMaximized)//防止最大化时破坏窗口位置信息，保证这个resize只用来监听手动更改窗口大小
+                    synchronizeWindowRect(entry.target.Struct_Window_thisWindow);
+                updateCoverStateOfOverlappedWindow(entry.target.Struct_Window_thisWindow);
+            }
         }
     });
 }
@@ -131,6 +136,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
 
     /*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
     //save attributes for the first time
+    Struct_Window_newWindow.Bool_hasRecentlyChangedHiddenState = false;
 
     Struct_Window_newWindow.Int_pileIndex = 0;//新更改:使用0代替undefined,表示此窗口在创建过程中,moveWindowToTheTopOfItsIndexGroup会特殊处理,同时保持初始化的一致性,变量保持正确值 //原先就是出现把undefined执行++出现Nan错误
     Struct_Window_newWindow.Bool_needToBeUpdated = false;
@@ -177,7 +183,7 @@ function /*void*/ asyncUpdateAllWindow() {
 }
 
 function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
-    //Bool_suspendAsyncUpdate = true;//debug config
+    // Bool_suspendAsyncUpdate = true;//debug config
     let DOMobj_SVGfilterEffect = document.getElementById("SVGfilterEffect-window").firstElementChild;
 
     synchronizeWindowRect(Struct_Window_targetWindow);
@@ -733,7 +739,10 @@ function /*void*/ synchornizeDisplayStatus(Struct_Window_targetWindow) {
 }
 
 function /*void*/ applyDisplayStatus(Struct_Window_targetWindow) {
-    Struct_Window_targetWindow.DOMobj_locator.style.display = Struct_Window_targetWindow.Bool_isHidden ? "none" : "block";
+    if ((Struct_Window_targetWindow.Bool_isHidden) !== (Struct_Window_targetWindow.DOMobj_locator.style.display === "none")) {
+        Struct_Window_targetWindow.Bool_hasRecentlyChangedHiddenState = true;
+        Struct_Window_targetWindow.DOMobj_locator.style.display = Struct_Window_targetWindow.Bool_isHidden ? "none" : "block";
+    }
     // Struct_Window_targetWindow.DOMobj_locator.style.visibility = Struct_Window_targetWindow.Bool_isHidden ? "hidden" : "visible";
 }
 
