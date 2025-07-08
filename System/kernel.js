@@ -6,6 +6,8 @@ function /*int*/ systemMain() {
     document.body.onload = null;
     suspendScreen();
     initDesktop();
+    initWindowResizeSynchronizer();
+    initGlobalFlags();
 
     newWindowButton();//debug
 

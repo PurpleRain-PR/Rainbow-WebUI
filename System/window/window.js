@@ -36,6 +36,7 @@ var DOMobj_windowBase/*for system only*/ = undefined;//调用initDesktop()后才
 var Int_indexOfWindowToBeAsyncUpdated/*for system only*/ = 0;//仅被asyncUpdateAllWindow()使用
 var Arr_Int_indexOfGWOTToBeAsyncUpdated/*for system only*/ = new Array(0, 0);//仅被asyncUpdateGWOT()使用 //[0]:外层循环位置,[1]:内层循环位置
 var Bool_suspendAsyncUpdate/*for system only*/ = false;//仅被两个异步更新函数使用
+var ROobj_windowBaseResizeObserver/*for system only*/ = undefined;
 
 //functions
 function /*void*/ initDesktop(/*void*/) {
@@ -44,6 +45,17 @@ function /*void*/ initDesktop(/*void*/) {
     DOMobj_windowBase.style.top = 0;
     let DOMobj_windowBaseDragHandle = document.getElementsByClassName("windowBaseDragHandle")[0];
     DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase, event); };
+}
+
+function /*void*/ initWindowResizeSynchronizer(/*void*/) {
+    ROobj_windowBaseResizeObserver = new ResizeObserver(function (entries) {
+        for (let entry of entries) {
+            if (!entry.target.Struct_Window_thisWindow.Bool_isMaximized && Bool_isMouseLPressed)//防止最大化时破坏窗口位置信息，保证这个resize只用来监听手动更改窗口大小
+                synchronizeWindowRect(entry.target.Struct_Window_thisWindow);
+            updateCoverStateOfOverlappedWindow(entry.target.Struct_Window_thisWindow);
+            console.log(2);
+        }
+    });
 }
 
 function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, Str_title) {
@@ -65,6 +77,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_frame = document.createElement("div");//window
     Struct_Window_newWindow.DOMobj_frame.setAttribute("class", "window");
     Struct_Window_newWindow.DOMobj_rotateBase.appendChild(Struct_Window_newWindow.DOMobj_frame);
+    Struct_Window_newWindow.DOMobj_frame.Struct_Window_thisWindow = Struct_Window_newWindow;//给frame创建到所属窗口的引用，在resize时防止遍历（resizeObserver只能监听DOM元素）
 
     Struct_Window_newWindow.DOMobj_navigator = document.createElement("div");//navigator
     Struct_Window_newWindow.DOMobj_navigator.setAttribute("class", "nav");
@@ -108,7 +121,12 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_maximizeButton.onclick = function () { changeMaximizeStatus(Struct_Window_newWindow); };
     Struct_Window_newWindow.DOMobj_dragBox.onpointerdown = function (event) { if (!Struct_Window_newWindow.Bool_isMaximized) dragWindow(Struct_Window_newWindow, event); };//windowDrag
     Struct_Window_newWindow.DOMobj_closeButton.onclick = function () { closeWindow(Struct_Window_newWindow) };
-    Struct_Window_newWindow.DOMobj_frame.mouseenter = function () { console.log(Struct_Window_newWindow.Int_handle); if (!Struct_Window_newWindow.Bool_isCovered) moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow); };
+    Struct_Window_newWindow.DOMobj_frame.onmouseenter = function () {
+        if (!Bool_isMouseLPressed &&
+            !Struct_Window_newWindow.Bool_isCovered &&
+            Struct_Window_newWindow.Int_pileIndex > 1)
+            moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
+    };
     applyWindowTitle(Struct_Window_newWindow);
 
     /*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
@@ -126,6 +144,8 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     // Struct_Window_newWindow.DOMobj_maximizeButton.textContent = String(Struct_Window_newWindow.Int_handle);//Debug Config
 
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
+
+    ROobj_windowBaseResizeObserver.observe(Struct_Window_newWindow.DOMobj_frame);
 
     return Struct_Window_newWindow;
 }//2024.4.2
@@ -157,7 +177,7 @@ function /*void*/ asyncUpdateAllWindow() {
 }
 
 function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 copied from function “dragObject” and customized for desktop QwQ
-    Bool_suspendAsyncUpdate = true;
+    //Bool_suspendAsyncUpdate = true;//debug config
     let DOMobj_SVGfilterEffect = document.getElementById("SVGfilterEffect-window").firstElementChild;
 
     synchronizeWindowRect(Struct_Window_targetWindow);
@@ -204,6 +224,8 @@ function /*void*/ dragWindow(Struct_Window_targetWindow, event) {//2024.4.11 cop
 
         Int_lastTop = Int_top;
         Int_lastLeft = Int_left;
+
+        updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow);//resize更新重写和提取了一些函数，顺便解决了拖动时不能及时更新覆盖状态的问题
     };
     document.onpointerup = function (event) {
         Bool_suspendAsyncUpdate = false;
@@ -314,6 +336,7 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
     removeWindowFromGWOT(Struct_Window_targetWindow.Int_handle);
     Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
+    ROobj_windowBaseResizeObserver.unobserve(Struct_Window_targetWindow.DOMobj_frame);
     Struct_Window_targetWindow.DOMobj_locator.remove();//remove from DOM
     Struct_Window_targetWindow = null;//free the memory
 }
@@ -461,12 +484,14 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
                     Arr_Struct_Window_allWindows[Int_i].Int_pileIndex++;//adjust the index
                 }
             }
-            if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window //现在初始化的时候在执行此函数之前就执行了syncRect,所以不需要检测rect是不是undefined
-                coverWindow(Arr_Struct_Window_allWindows[Int_i]);
-            }//这里要把这个if提出来，因为现在的窗口实时更新机制导致有可能正在操作的窗口不会是pileindex=1(只要没重叠就不会主动更新自己的pileindex)所以比较pileindex大小的剔除会导致pileindex=1的窗口移到别的未覆盖窗口上面时不会把下面的窗口覆盖 2025.3.23 YCH
+            // if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window //现在初始化的时候在执行此函数之前就执行了syncRect,所以不需要检测rect是不是undefined
+            //     coverWindow(Arr_Struct_Window_allWindows[Int_i]);//resize更新后，这里已经提出为单独的函数“coverOverlappedWindow”
+            // }//这里要把这个if提出来，因为现在的窗口实时更新机制导致有可能正在操作的窗口不会是pileindex=1(只要没重叠就不会主动更新自己的pileindex)所以比较pileindex大小的剔除会导致pileindex=1的窗口移到别的未覆盖窗口上面时不会把下面的窗口覆盖 2025.3.23 YCH
             //Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
         }
     }
+    updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow);
+
     Struct_Window_targetWindow.Int_pileIndex = 1;//set top index
 
     uncoverWindow(Struct_Window_targetWindow);
@@ -487,9 +512,19 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
     //--YCH  bug fixed 2024 10.11 we don't need a "insertBefore" but a "insertAfter" so finally resolved by "insertBefore" at the "nextSibling" of the target (for more information, please read the develop log)
 }//2024.4.11
 
+function /*void*/ updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow) {
+    for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
+        if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {
+            coverWindow(Arr_Struct_Window_allWindows[Int_i]);
+        } else if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_i])) {
+            uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//这句存疑，估计会有bug，到时候再看
+        }
+    }
+}
+
 function /*bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
     return (Struct_Window_window1.Int_handle !== Struct_Window_window2.Int_handle) &&
-        (calculateWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);//以前每次查询都会计算一遍，现在已经有持续运行的异步更新了，所以改为查询GWOT 2025.3.22 PR
+        (queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);//以前每次查询都会计算一遍，现在已经有持续运行的异步更新了，所以改为查询GWOT 2025.3.22 PR
 }//2024.4.15
 
 function /*bool*/ isWindowInScreen(Struct_Window_window) {
