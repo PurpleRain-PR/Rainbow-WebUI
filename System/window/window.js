@@ -118,6 +118,8 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
 
     Struct_Window_newWindow.Bool_isMaximized = false;
     Struct_Window_newWindow.Bool_isCovered = false;
+    Struct_Window_newWindow.Bool_isHidden = false;
+    Struct_Window_newWindow.Bool_hasRecentlyChangedHiddenState = false;
     Struct_Window_newWindow.DOMobj_frame.onpointerdown = function () {
         if (Struct_Window_newWindow.Bool_isCovered && isWindowOverlappedByOthers(Struct_Window_newWindow))
             moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
@@ -136,7 +138,6 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
 
     /*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
     //save attributes for the first time
-    Struct_Window_newWindow.Bool_hasRecentlyChangedHiddenState = false;
 
     Struct_Window_newWindow.Int_pileIndex = 0;//新更改:使用0代替undefined,表示此窗口在创建过程中,moveWindowToTheTopOfItsIndexGroup会特殊处理,同时保持初始化的一致性,变量保持正确值 //原先就是出现把undefined执行++出现Nan错误
     Struct_Window_newWindow.Bool_needToBeUpdated = false;
@@ -365,9 +366,14 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
         //两次剔除需要分开,因为窗口极其大量的情况下,即使把下面的窗口全部不给模糊,也会卡,必须直接ban掉显示,并且上面模糊之后会透出下面不模糊的，导致撕裂和叠色
         //第一次更新剔除:被其它窗口完全盖住就不更新 这个只要剔除一次,因为拖动桌面的时候窗口不会动
         //这里用visibility比display更快 //我是sb 肯定display更快啊!24.10.4
-        applyDisplayStatus(Arr_Struct_Window_allWindows[Int_i]);//老的已删,这个操作已经被独立出来作为函数了
+
+        // applyDisplayStatus(Arr_Struct_Window_allWindows[Int_i]);//老的已删,这个操作已经被独立出来作为函数了 
+        //2025.7.8这里已经进入异步更新了，上面那句暂时不用了
+
         Arr_Struct_Window_allWindows[Int_i].DOMobj_frame.style.transition = "none";//25.3.19 (窗口resize缓动更新) 窗口拖动时取消缓动(因为会与运动模糊的旋转操作冲突)
     }//有点离谱,1000窗口测试的时候拖动结束的时候会卡一下,貌似是因为要同时调整999个窗口,GPU吃不消,那么以后这个剔除得保持常驻了,估计为了提升计算效率还得打进GWOT里面,先这样吧 PR 2024.10.3
+
+    let Int_stopBlurringTimeoutID = undefined;
 
     document.onpointermove = function (event) {
         let Int_left = Int_moveOriginX + event.clientX - Int_cursorX;
@@ -394,7 +400,18 @@ function /*void*/ dragDesktop(DOMobj_dragBox, DOMobj_moveTarget, event) {//copie
                 Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.visibility = "hidden";
                 // Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.filter = ""; //原因定位了,就在这里! 重新显示的时候css filter的url()函数因为DOM元素太多导致查找极其慢
             }
+
         }//这里因为把窗口位置放在两次移动点中间麻烦，就没写了，直接没有偏移窗口位置，看看观感再说吧 24.8.18YCH
+
+
+        if (Int_stopBlurringTimeoutID) clearTimeout(Int_stopBlurringTimeoutID);
+        Int_stopBlurringTimeoutID = setTimeout(() => {
+            for (let Int_i = 0; Int_i < Int_len; Int_i++)
+                updateWindowMotionBlur(Arr_Struct_Window_allWindows[Int_i], DOMobj_SVGfilterEffect_window, 0, 0, 0, 0);
+            updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffect_desktop, 0, 0, 0, 0);
+            clearTimeout(Int_stopBlurringTimeoutID);
+        }, 100);//0.1秒指针不动时取消运动模糊（因为拖动事件触发频率有限制，时间分辨率低，为了观感，这个运动模糊模块从设计初期就是基于空间的）
+
         Int_lastTop = Int_top;
         Int_lastLeft = Int_left;
     };
