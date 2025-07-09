@@ -139,18 +139,22 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     /*bug fixed 2024.6.4 YCH (auto cover window uses function "isWindowOverlap" to detect overlap, it needs to check the attribute "positionRestore")*/
     //save attributes for the first time
 
-    Struct_Window_newWindow.Int_pileIndex = 0;//新更改:使用0代替undefined,表示此窗口在创建过程中,moveWindowToTheTopOfItsIndexGroup会特殊处理,同时保持初始化的一致性,变量保持正确值 //原先就是出现把undefined执行++出现Nan错误
+    Struct_Window_newWindow.Int_handle = distributeWindowHandle();
+    addWindowToGWOT(Struct_Window_newWindow.Int_handle);
+    Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
+    //蠢没边了，没把新窗口push进全窗口数组就想用length+1来获得预赋值pileindex，也是神入了//这三句因为有相对位置要求，所以一起提前 2025.7.9YCH
+
+    //Struct_Window_newWindow.Int_pileIndex = 0;//新更改:使用0代替undefined,表示此窗口在创建过程中,moveWindowToTheTopOfItsIndexGroup会特殊处理,同时保持初始化的一致性,变量保持正确值 //原先就是出现把undefined执行++出现Nan错误 //现在这是老方法了
+    Struct_Window_newWindow.Int_pileIndex = Arr_Struct_Window_allWindows.length + 1;//先放在所有窗口最后，再正常调用置顶函数，防止不必要的特判（其实是因为有bug //新pileindex实现调整2025.7.9
     Struct_Window_newWindow.Bool_needToBeUpdated = false;
     synchronizeWindowRect(Struct_Window_newWindow);//new
     synchornizeDisplayStatus(Struct_Window_newWindow);
 
-    Struct_Window_newWindow.Int_handle = distributeWindowHandle();
-    addWindowToGWOT(Struct_Window_newWindow.Int_handle);
-    Arr_Struct_Window_allWindows.push(Struct_Window_newWindow);
     Struct_Window_newWindow.Int_indexOfPileIndex = 1;//Debug Config
     // Struct_Window_newWindow.DOMobj_maximizeButton.textContent = String(Struct_Window_newWindow.Int_handle);//Debug Config
 
-    moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
+    moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);//这里有个bug，初始化窗口的时候新出现的窗口并不会遮盖其它和它重叠的窗口，单步调试后发现问题出在架构上，因为里面计算overlap status的时候是查询全局窗口重叠表，但是因为阻塞，此时刚加入的新窗口还没有在异步的表更新内更新重叠状态，而刚extend完的表数据默认置0，代表窗口外切，不算overlap，所以没有遮盖窗口
+    //已解决，刚好要把overlap就覆盖与层级判断合并后加入异步处理，恰好解决这里的问题，不是置顶的时候调用cover，而是持续异步调用
 
     ROobj_windowBaseResizeObserver.observe(Struct_Window_newWindow.DOMobj_frame);
 
@@ -173,9 +177,11 @@ function /*void*/ asyncUpdateAllWindow() {
         || */isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     applyPileIndex(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
-    if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])) {
-        uncoverWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
-    }
+    // if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])) {
+    //     uncoverWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    // }//刚好合并进下面这个函数了
+    updateCoverStateOfOverlappedWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    applyCoverStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     //内部更改结束
     //处理系统外部更改
     if (Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_needToBeUpdated) {//(外部的更改)被标记更改的才更新
@@ -494,18 +500,18 @@ function /*Struct_Window*/ getWindowByHandle(Int_targetHandle) {
 // }//4.9 noon //THIS FUNCTION IS NOT USED AND WON'T BE USED(maybe ,20240414 ych)!!!
 
 function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) {//move the window to the top(in its group: Struct_Window->Int_indexOfPileIndex),and set pileIndex(Struct_Window->Int_pileIndex) to the biggest
-    let Struct_Window_lastTopWindow = undefined;
+    //let Struct_Window_lastTopWindow = undefined; //新的实现不需要lasttop了，当时是要用nextsibling才要找它
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
         //为什么这里改成倒序遍历函数会失效啊  //解决此大bug详见开发日志 2024.10.17 PR
         if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {//窗口组堆叠次序（还没写）
-            if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
-                //bug fixed 2024.4.10 mistakingly spelled the "pileindex" as "indexOfPileIndex"
-                Struct_Window_lastTopWindow = Arr_Struct_Window_allWindows[Int_i];
-            }//find the last on-top window in the group
-            if (Struct_Window_targetWindow.Int_pileIndex === 0 || Arr_Struct_Window_allWindows[Int_i].Int_pileIndex < Struct_Window_targetWindow.Int_pileIndex) {//to only adjust the index before the target (bug discovered and fixed on 2024.4.10)//initwindow dont have index(undefined) bug fixed on 2024.4.10
-                if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex !== 0) {//是0就代表这个窗口在初始化之中
-                    Arr_Struct_Window_allWindows[Int_i].Int_pileIndex++;//adjust the index
-                }
+            // if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
+            //bug fixed 2024.4.10 mistakingly spelled the "pileindex" as "indexOfPileIndex"
+            // Struct_Window_lastTopWindow = Arr_Struct_Window_allWindows[Int_i];
+            // }//find the last on-top window in the group
+            if (/*Struct_Window_targetWindow.Int_pileIndex === 0 ||*/ Arr_Struct_Window_allWindows[Int_i].Int_pileIndex < Struct_Window_targetWindow.Int_pileIndex) {//to only adjust the index before the target (bug discovered and fixed on 2024.4.10)//initwindow dont have index(undefined) bug fixed on 2024.4.10
+                //if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex !== 0) {//是0就代表这个窗口在初始化之中
+                Arr_Struct_Window_allWindows[Int_i].Int_pileIndex++;//adjust the index
+                //} //该特性（pileindex=0表示正在初始化的窗口）已取消
             }
             // if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {//if overlap then cover the beneath window //现在初始化的时候在执行此函数之前就执行了syncRect,所以不需要检测rect是不是undefined
             //     coverWindow(Arr_Struct_Window_allWindows[Int_i]);//resize更新后，这里已经提出为单独的函数“coverOverlappedWindow”
@@ -513,7 +519,8 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
             //Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + String(Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//Debug Config
         }
     }
-    updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow);
+    // updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow);//这句只判断是否重叠，然后就cover，以后要加入层级判断，并移入异步处理
+    //移入了，顺便解决一个窗口初始化的bug
 
     Struct_Window_targetWindow.Int_pileIndex = 1;//set top index
 
@@ -548,12 +555,16 @@ function /*void*/ applyPileIndex(Struct_Window_targetWindow) {
 }
 
 function /*void*/ updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow) {
+    uncoverWindow(Struct_Window_targetWindow);//架构改了，运行逻辑和顺序也变了，后面存疑的那段变成了这句，bug也不会有了
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
         if (isWindowOverlap(Arr_Struct_Window_allWindows[Int_i], Struct_Window_targetWindow)) {
-            coverWindow(Arr_Struct_Window_allWindows[Int_i]);
-        } else if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_i])) {
-            uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//这句存疑，估计会有bug，到时候再看
+            coverWindow(Struct_Window_targetWindow.Int_pileIndex < Arr_Struct_Window_allWindows[Int_i].Int_pileIndex ?
+                Arr_Struct_Window_allWindows[Int_i] :
+                Struct_Window_targetWindow);
         }
+        // else if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_i])) {
+        //     uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//这句存疑，估计会有bug，到时候再看
+        // }
     }
 }
 
@@ -574,12 +585,16 @@ function /*bool*/ isWindowInScreen(Struct_Window_window) {
 
 function /*void*/ coverWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.Bool_isCovered = true;
-    Struct_Window_targetWindow.DOMobj_cover.style.visibility = "visible";//提升渲染性能
+    // Struct_Window_targetWindow.DOMobj_cover.style.visibility = "visible";//提升渲染性能
 }
 
 function /*void*/ uncoverWindow(Struct_Window_targetWindow) {//uncover the window
     Struct_Window_targetWindow.Bool_isCovered = false;
-    Struct_Window_targetWindow.DOMobj_cover.style.visibility = "hidden";//提升渲染性能
+    // Struct_Window_targetWindow.DOMobj_cover.style.visibility = "hidden";//提升渲染性能
+}
+
+function /*void*/ applyCoverStatus(Struct_Window_targetWindow) {
+    Struct_Window_targetWindow.DOMobj_cover.style.visibility = Struct_Window_targetWindow.Bool_isCovered ? "visible" : "hidden";//架构更改，这里变异步了，计算完成一次性更改，开销更小
 }
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
