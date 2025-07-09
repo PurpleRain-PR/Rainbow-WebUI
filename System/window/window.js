@@ -113,7 +113,7 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_frame.appendChild(Struct_Window_newWindow.DOMobj_cover);
 
     Struct_Window_newWindow.DOMobj_cover.setAttribute("style", "top:0;left:0;visibility:hidden;");
-    Struct_Window_newWindow.DOMobj_locator.setAttribute("style", "top:0;left:0;display:block;");
+    Struct_Window_newWindow.DOMobj_locator.setAttribute("style", "top:" + Int_top + "px;left:" + Int_left + "px;display:block;");
     Struct_Window_newWindow.DOMobj_frame.setAttribute("style", "width:" + Int_width + "px;height:" + Int_height + "px;");
 
     Struct_Window_newWindow.Bool_isMaximized = false;
