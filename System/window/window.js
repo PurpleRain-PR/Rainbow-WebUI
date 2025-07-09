@@ -304,7 +304,7 @@ function /*void*/ maximizeWindow(Struct_Window_targetWindow) {
     let DOMobj_targetWindow = Struct_Window_targetWindow.DOMobj_frame;
 
     moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow);
-
+    applyPileIndex(Struct_Window_targetWindow);
     synchronizeWindowRect(Struct_Window_targetWindow);//new
     /*bug fixed 2024.4.11 style.something is CHAR ARRAY!!! not integer so use parseInt() to translate (YCH realized this bug in a dream last night :D  */
     //save restore attributes
@@ -594,7 +594,7 @@ function /*void*/ uncoverWindow(Struct_Window_targetWindow) {//uncover the windo
 }
 
 function /*void*/ applyCoverStatus(Struct_Window_targetWindow) {
-    Struct_Window_targetWindow.DOMobj_cover.style.visibility = Struct_Window_targetWindow.Bool_isCovered ? "visible" : "hidden";//架构更改，这里变异步了，计算完成一次性更改，开销更小
+    Struct_Window_targetWindow.DOMobj_cover.style.visibility = Struct_Window_targetWindow.Bool_isCovered ? "inherit" : "hidden";//架构更改，这里变异步了，计算完成一次性更改，开销更小
 }
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
@@ -801,3 +801,4 @@ var i = initWindow;
 var a = getWindowByHandle;
 var m = moveWindowToTheTopOfItsIndexGroup;
 var r = function (r) { m(a(r)); };
+// for(let p=0;p<10000;p++){i(Math.floor(Math.random()*10000),Math.floor(Math.random()*10000),Math.floor(Math.random()*500),Math.floor(Math.random()*500),Math.random().toString(36).substring(2, 15))}
