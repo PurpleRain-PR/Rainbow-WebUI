@@ -522,12 +522,12 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
     // Struct_Window_targetWindow.DOMobj_closeButton.textContent = "i=" + Struct_Window_targetWindow.Int_pileIndex;//Debug Config
 
 
-    if (Struct_Window_lastTopWindow !== undefined && Struct_Window_lastTopWindow.DOMobj_frame.nextSibling !== undefined) {//adjust the DOM sequence
-        //以前的老方法会导致DOM重新计算，尤其对iframe不友好，会导致iframe重载，而承载应用的又是iframe，所以改成z-index方法来实现，刚好以前写的接口很充足，逻辑也完善，可以很方便实现
-        // Struct_Window_targetWindow.DOMobj_locator.parentNode.insertBefore(//老方法
-        //     Struct_Window_targetWindow.DOMobj_locator,
-        //     Struct_Window_lastTopWindow.DOMobj_locator.nextSibling);//2024.8.18 运动模糊更新后，在frame父级插了个locator，这里的frame也就换成了locator
-    }
+    // if (Struct_Window_lastTopWindow !== undefined && Struct_Window_lastTopWindow.DOMobj_frame.nextSibling !== undefined) {//adjust the DOM sequence
+    //以前的老方法会导致DOM重新计算，尤其对iframe不友好，会导致iframe重载，而承载应用的又是iframe，所以改成z-index方法来实现，刚好以前写的接口很充足，逻辑也完善，可以很方便实现
+    // Struct_Window_targetWindow.DOMobj_locator.parentNode.insertBefore(//老方法
+    //     Struct_Window_targetWindow.DOMobj_locator,
+    //     Struct_Window_lastTopWindow.DOMobj_locator.nextSibling);//2024.8.18 运动模糊更新后，在frame父级插了个locator，这里的frame也就换成了locator
+    // }
     //新方法
     // let Int_len = Arr_Struct_Window_allWindows.length;
     // for (let Int_i = 0; Int_i < Int_len; Int_i++) {
