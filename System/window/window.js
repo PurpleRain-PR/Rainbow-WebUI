@@ -172,6 +172,7 @@ function /*void*/ asyncUpdateAllWindow() {
         /*!isWindowInScreen(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])
         || */isWindowFullCoveredByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     applyDisplayStatus(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    applyPileIndex(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     if (!isWindowOverlappedByOthers(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated])) {
         uncoverWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
     }
@@ -334,7 +335,6 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
         if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
             if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
                 Arr_Struct_Window_allWindows[Int_i].Int_pileIndex--;//adjust the index
-                Arr_Struct_Window_allWindows[Int_i].DOMobj_closeButton.textContent = "i=" + Arr_Struct_Window_allWindows[Int_i].Int_pileIndex;//Debug Config
                 if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
                     uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//uncover the new top window
                 }
@@ -523,10 +523,18 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
 
 
     if (Struct_Window_lastTopWindow !== undefined && Struct_Window_lastTopWindow.DOMobj_frame.nextSibling !== undefined) {//adjust the DOM sequence
-        Struct_Window_targetWindow.DOMobj_locator.parentNode.insertBefore(
-            Struct_Window_targetWindow.DOMobj_locator,
-            Struct_Window_lastTopWindow.DOMobj_locator.nextSibling);//2024.8.18 运动模糊更新后，在frame父级插了个locator，这里的frame也就换成了locator
+        //以前的老方法会导致DOM重新计算，尤其对iframe不友好，会导致iframe重载，而承载应用的又是iframe，所以改成z-index方法来实现，刚好以前写的接口很充足，逻辑也完善，可以很方便实现
+        // Struct_Window_targetWindow.DOMobj_locator.parentNode.insertBefore(//老方法
+        //     Struct_Window_targetWindow.DOMobj_locator,
+        //     Struct_Window_lastTopWindow.DOMobj_locator.nextSibling);//2024.8.18 运动模糊更新后，在frame父级插了个locator，这里的frame也就换成了locator
     }
+    //新方法
+    // let Int_len = Arr_Struct_Window_allWindows.length;
+    // for (let Int_i = 0; Int_i < Int_len; Int_i++) {
+    //     Arr_Struct_Window_allWindows[Int_i].DOMobj_locator.style.zIndex = String(1 + Int_len - Arr_Struct_Window_allWindows[Int_i].Int_pileIndex);//pileIndex越小，z-index越大，同时窗口的z-index必须大于0，小于等于0的范围为系统组件预留
+    // }
+    //这一坨移到异步状态更新里面去，以后这个函数只负责窗口结构体内pileIndex数值的更新
+
     //新bug:刚创建的窗口会直接Cover掉下面所有有重叠的窗口,无论是否完全遮挡 YCH2024.10.16
     /*Bug report from Gevin:
         函数 moveWindowTotheTopofItsIndexGroup 运行无误
@@ -534,6 +542,10 @@ function /*void*/ moveWindowToTheTopOfItsIndexGroup(Struct_Window_targetWindow) 
     */
     //--YCH  bug fixed 2024 10.11 we don't need a "insertBefore" but a "insertAfter" so finally resolved by "insertBefore" at the "nextSibling" of the target (for more information, please read the develop log)
 }//2024.4.11
+
+function /*void*/ applyPileIndex(Struct_Window_targetWindow) {
+    Struct_Window_targetWindow.DOMobj_locator.style.zIndex = String(1 + Arr_Struct_Window_allWindows.length - Struct_Window_targetWindow.Int_pileIndex);//pileIndex越小，z-index越大，同时窗口的z-index必须大于0，小于等于0的范围为系统组件预留
+}
 
 function /*void*/ updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow) {
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {
@@ -551,9 +563,11 @@ function /*bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) 
 }//2024.4.15
 
 function /*bool*/ isWindowInScreen(Struct_Window_window) {
-    let Int_screenLeft = parseInt(DOMobj_windowBase.style.left) + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_left;
+    // let Int_screenLeft = parseInt(DOMobj_windowBase.style.left) + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_left;
+    let Int_screenLeft = DOMobj_windowBase.offsetLeft + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_left;
     let Int_screenRight = Int_screenLeft + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_width;
-    let Int_screenTop = parseInt(DOMobj_windowBase.style.top) + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_top;
+    // let Int_screenTop = parseInt(DOMobj_windowBase.style.top) + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_top;
+    let Int_screenTop = DOMobj_windowBase.offsetTop + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_top;
     let Int_screenBottom = Int_screenTop + Struct_Window_window.Struct_StdWindowRect_windowRect.Int_height;
     return !((Int_screenRight < 0 || Int_screenLeft > innerWidth) || (Int_screenBottom < 0 || Int_screenTop > innerHeight));
 }
