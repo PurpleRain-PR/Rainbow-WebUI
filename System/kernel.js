@@ -34,8 +34,10 @@ var Bool_hasStoppedSysInterval = false;
 var Int_newSysIntervalCreateStep = Int_minSysIntervalCreateStep;
 var Int_sysIntervalExecuteCount = 0;
 var Int_fullSysIntervalNum = undefined;
+var Float_estiatedNow = 0;
 
 function /*void*/ systemMainIntervalControl() {
+    Float_estiatedNow = performance.now();
     Int_fullSysIntervalNum = (4.2 * Int_sysIntervalExecuteCount / Int_sysIntervalControlInterval | 0) + 2;//整除 //饱和执行数,乘以5是因为interval不是1ms执行一次,+2是防止极端情况前面商为0导致自锁
     //↑这个前面的系数(现在是4.2),应该是可以测出来的,也就是interval设置为1ms时实际间隔的毫秒数,但是要测算(否则会导致不饱和或者过饱和),以后写,现在先这样吧
     let Int_targetSysIntervalNum = ((Int_fullSysIntervalNum * 3 + Int_maxSysIntervalNum) >> 2);

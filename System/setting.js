@@ -8,6 +8,6 @@ var Int_sysIntervalControlInterval = 500;
 // ^^^ //
 
 // vvv // window & desktop UI
-var String_gridColor = "#2c2d6b";
+var String_gridColor = "#3b3b3c";
 var Int_gridDistance = 100;//px
 // ^^^ //

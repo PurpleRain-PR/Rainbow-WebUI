@@ -22,11 +22,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(61, 93, 255, 0.397);
     cursor: move;
 
-    background: repeating-linear-gradient(0deg, #2c2d6b 0px, #2c2d6b 1px, transparent 1px, transparent 100px),
-        repeating-linear-gradient(90deg, #2c2d6b 0px, #2c2d6b 1px, transparent 1px, transparent 100px);
+    background: repeating-linear-gradient(0deg, #3b3b3c 0px, #3b3b3c 1px, transparent 1px, transparent 100px),
+        repeating-linear-gradient(90deg, #3b3b3c 0px, #3b3b3c 1px, transparent 1px, transparent 100px);
     filter: url(#SVGfilterEffect-windowBaseDragHandle);
 }
 
@@ -48,8 +47,8 @@
     min-height: 60px;
     min-width: 120px;
     border-radius: 10px;
-    background-color: rgb(61, 93, 255);
-    border: 3px solid #8fbeff;
+    background-color: #282a2d;
+    border: 3px solid #4e4e4f;
     overflow: hidden;
     cursor: crosshair;
     transform-origin: left top;
@@ -62,7 +61,7 @@
     left: 0;
     width: 100%;
     height: 30px;
-    background-color: rgba(255, 61, 61, 0.519);
+    background-color: #4e4e4f;
 }
 
 .windowDragBox {
@@ -77,12 +76,17 @@
 
 .closeButton {
     position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     right: 0;
     top: 0;
     width: 30px;
     height: 30px;
-    background-color: rgba(255, 119, 0, 0.822);
+    background-color: #4e4e4fa1;
     cursor: pointer;
+    -webkit-backdrop-filter: blur(1.5px);
+    backdrop-filter: blur(1.5px);
 }
 
 .maximizeButton {
@@ -91,8 +95,10 @@
     top: 0;
     width: 30px;
     height: 30px;
-    background-color: rgba(0, 200, 255, 0.822);
+    background-color: #4e4e4fa1;
     cursor: pointer;
+    -webkit-backdrop-filter: blur(1.5px);
+    backdrop-filter: blur(1.5px);
 }
 
 .maximizedWindow {
@@ -102,9 +108,9 @@
     width: 100%;
     height: 100%; 这是以前最大化用fixed实现留下的遗物，为了向动画妥协，用了absolute+js计算视口位置*/
     resize: none;
-    border: 0px solid #8fbeff;
+    border: 0px solid #4e4e4f;
     border-radius: 0px;
-    background-color: rgb(61, 93, 255);
+    background-color: #282a2d;
     overflow: hidden;
     cursor: crosshair;
     transition: all .5s cubic-bezier(0.1, 1, 0.6, 1);
@@ -130,14 +136,15 @@
     left: 0;
     width: 100%;
     height: 100%;
+    pointer-events: none;
     -webkit-backdrop-filter: blur(1.5px);
-    /* 添加前缀以解决兼容性问题 */
     backdrop-filter: blur(1.5px);
+    transition: opacity .15s cubic-bezier(0.1, 1, 0.6, 1);
     background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 10px, transparent 10px, transparent 20px);
 }
 
 .window::-webkit-resizer {
-    background-color: rgba(255, 65, 65, 0.295);
+    background-color: #4e4e4fa1;
 }
 
 .windowTitle {
@@ -160,6 +167,63 @@
 
 .closeButton,
 .maximizeButton,
-.windowTitle {
+.windowTitle{
     transition: all .5s cubic-bezier(0.3, 0, 0, 1) .25s;
+}
+
+.maximizeButton img {
+    filter: brightness(0.65);
+    transition: transform .15s cubic-bezier(0.1, 1, 0.6, 1),
+        filter .3s cubic-bezier(0.1, 1, 0.6, 1) .12s,
+        left .5s cubic-bezier(0.3, 0, 0, 1) .25s,
+        right .5s cubic-bezier(0.3, 0, 0, 1) .25s,
+        top .5s cubic-bezier(0.3, 0, 0, 1) .25s,
+        bottom .5s cubic-bezier(0.3, 0, 0, 1) .25s;
+}
+
+.closeButtonIcon {
+    filter: brightness(0.65);
+    transition: transform .15s cubic-bezier(0.1, 1, 0.6, 1),
+        filter .3s cubic-bezier(0.1, 1, 0.6, 1) .12s;
+    }
+
+.closeButton:hover .closeButtonIcon {
+    filter: brightness(3);
+    transform: rotate(90deg);
+}
+
+.maximizeButtonIcon2 {
+    rotate: 180deg;
+}
+
+.maximizeButton img {
+    position: absolute;
+}
+
+.window .nav .maximizeButton .maximizeButtonIcon1 {
+    left: 14.5px;
+    top: 14.5px;
+}
+
+.maximizedWindow .nav .maximizeButton .maximizeButtonIcon1 {
+    left: 3.5px;
+    top: 3.5px;
+}
+
+.window .nav .maximizeButton .maximizeButtonIcon2 {
+    right: 14.5px;
+    bottom: 14.5px;
+}
+
+.maximizedWindow .nav .maximizeButton .maximizeButtonIcon2 {
+    right: 3.5px;
+    bottom: 3.5px;
+}
+
+.window .nav .maximizeButton:hover .maximizeButtonIcon1,
+.maximizedWindow .nav .maximizeButton:hover .maximizeButtonIcon1,
+.window .nav .maximizeButton:hover .maximizeButtonIcon2,
+.maximizedWindow .nav .maximizeButton:hover .maximizeButtonIcon2 {
+    filter: brightness(3);
+    transform: translate(1px, 1px);
 }

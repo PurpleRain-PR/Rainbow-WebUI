@@ -1,5 +1,5 @@
 .newWindowButton {
-    background-image: linear-gradient(to right, #2b5876 0%, #4e4376 51%, #2b5876 100%);
+    background: #282a2d;
     position: fixed;
     top: 0;
     left: 0;
@@ -12,13 +12,12 @@
     transition: 0.5s;
     background-size: 200% auto;
     color: white;
-    box-shadow: 0 0 20px #eee;
     border-radius: 10px;
     display: block;
 }
 
 .newWindowButton:hover {
-    background-position: right center;
+    background: #4e4e4f;
     /* change the direction of the change here */
     color: #fff;
     text-decoration: none;

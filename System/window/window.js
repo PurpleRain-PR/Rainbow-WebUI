@@ -18,10 +18,12 @@ function /*Struct_Window*/ Struct_Window() {
     this.Bool_isHidden = undefined;
     this.Bool_isCovered = undefined;
     this.Bool_hasRecentlyChangedHiddenState = undefined;
+    this.Bool_isClosed = undefined;
     this.Str_title = undefined;
     this.Struct_StdWindowRect_windowRect = new Struct_StdWindowRect();//new
     this.Int_indexOfPileIndex = undefined;
     this.Int_pileIndex = undefined;
+    this.Float_timeStamp = undefined;
 }
 
 function /*Struct_StdWindowRect*/ Struct_StdWindowRect() {//代替Arr_Int[4]型的窗口坐标，那玩意可读性有点低了，而且目前仅有V8有优化，还是侧重一下语义吧 24.8.24
@@ -112,7 +114,21 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_cover.setAttribute("class", "windowCover");
     Struct_Window_newWindow.DOMobj_frame.appendChild(Struct_Window_newWindow.DOMobj_cover);
 
-    Struct_Window_newWindow.DOMobj_cover.setAttribute("style", "top:0;left:0;visibility:hidden;");
+    let DOMobj_closeButtonIcon = document.createElement("img");
+    DOMobj_closeButtonIcon.setAttribute("class", "closeButtonIcon");
+    DOMobj_closeButtonIcon.setAttribute("src", "./System/window/close.svg");
+    Struct_Window_newWindow.DOMobj_closeButton.appendChild(DOMobj_closeButtonIcon);
+
+    let DOMobj_maximizeButtonIcon = document.createElement("img");
+    DOMobj_maximizeButtonIcon.setAttribute("class", "maximizeButtonIcon1");
+    DOMobj_maximizeButtonIcon.setAttribute("src", "./System/window/resize.svg");
+    Struct_Window_newWindow.DOMobj_maximizeButton.appendChild(DOMobj_maximizeButtonIcon);
+    DOMobj_maximizeButtonIcon = document.createElement("img");
+    DOMobj_maximizeButtonIcon.setAttribute("class", "maximizeButtonIcon2");
+    DOMobj_maximizeButtonIcon.setAttribute("src", "./System/window/resize.svg");
+    Struct_Window_newWindow.DOMobj_maximizeButton.appendChild(DOMobj_maximizeButtonIcon);
+
+    Struct_Window_newWindow.DOMobj_cover.setAttribute("style", "top:0;left:0;opacity:0;");
     Struct_Window_newWindow.DOMobj_locator.setAttribute("style", "top:" + Int_top + "px;left:" + Int_left + "px;display:block;");
     Struct_Window_newWindow.DOMobj_frame.setAttribute("style", "width:" + Int_width + "px;height:" + Int_height + "px;");
 
@@ -120,6 +136,9 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.Bool_isCovered = false;
     Struct_Window_newWindow.Bool_isHidden = false;
     Struct_Window_newWindow.Bool_hasRecentlyChangedHiddenState = false;
+    Struct_Window_newWindow.Bool_isClosed = false;
+    Struct_Window_newWindow.Float_timeStamp = performance.now();
+
     Struct_Window_newWindow.DOMobj_frame.onpointerdown = function () {
         if (Struct_Window_newWindow.Bool_isCovered && isWindowOverlappedByOthers(Struct_Window_newWindow))
             moveWindowToTheTopOfItsIndexGroup(Struct_Window_newWindow);
@@ -170,6 +189,9 @@ function /*void*/ asyncUpdateAllWindow() {
     if (Int_indexOfWindowToBeAsyncUpdated >= Arr_Struct_Window_allWindows.length)
         Int_indexOfWindowToBeAsyncUpdated = 0;//循环扫描整个表
 
+    if (Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isClosed && Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Float_timeStamp < Float_estiatedNow) {
+        removeWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    }
     //处理系统内部更改
     //剔除就放在这里了
     Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isHidden =
@@ -336,7 +358,12 @@ function /*void*/ restoreWindow(Struct_Window_targetWindow) {
 }
 
 function /*void*/ closeWindow(Struct_Window_targetWindow) {
-    if (Struct_Window_targetWindow.Bool_isMaximized) return;
+    Struct_Window_targetWindow.Bool_isClosed = true;
+    Struct_Window_targetWindow.Float_timeStamp = performance.now() + 1000;
+    Struct_Window_targetWindow.DOMobj_frame.style["pointer-events"] = "none";
+    Struct_Window_targetWindow.DOMobj_frame.style.transition = "filter .6s cubic-bezier(0.1, 1, 0.6, 1), opacity .5s cubic-bezier(0.1, 1, 0.6, 1)";
+    Struct_Window_targetWindow.DOMobj_frame.style.filter = "blur(20px)";
+    Struct_Window_targetWindow.DOMobj_frame.style.opacity = "0";
     for (let Int_i = Arr_Struct_Window_allWindows.length - 1; Int_i >= 0; Int_i--) {//adjust other windows' index
         if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
             if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
@@ -347,6 +374,9 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
             }
         }
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
+}
+
+function /*void*/ removeWindow(Struct_Window_targetWindow) {
     removeWindowFromGWOT(Struct_Window_targetWindow.Int_handle);
     Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
     ROobj_windowBaseResizeObserver.unobserve(Struct_Window_targetWindow.DOMobj_frame);
@@ -569,6 +599,7 @@ function /*void*/ updateCoverStateOfOverlappedWindow(Struct_Window_targetWindow)
 }
 
 function /*bool*/ isWindowOverlap(Struct_Window_window1, Struct_Window_window2) {//is there's a bug? 2024.6.4
+    if (Struct_Window_window1.Bool_isClosed || Struct_Window_window2.Bool_isClosed) { return false; }//如果窗口在关闭动画中，则视作无遮挡
     return (Struct_Window_window1.Int_handle !== Struct_Window_window2.Int_handle) &&
         (queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) < 0);//以前每次查询都会计算一遍，现在已经有持续运行的异步更新了，所以改为查询GWOT 2025.3.22 PR
 }//2024.4.15
@@ -594,7 +625,8 @@ function /*void*/ uncoverWindow(Struct_Window_targetWindow) {//uncover the windo
 }
 
 function /*void*/ applyCoverStatus(Struct_Window_targetWindow) {
-    Struct_Window_targetWindow.DOMobj_cover.style.visibility = Struct_Window_targetWindow.Bool_isCovered ? "inherit" : "hidden";//架构更改，这里变异步了，计算完成一次性更改，开销更小
+    // Struct_Window_targetWindow.DOMobj_cover.style.visibility = Struct_Window_targetWindow.Bool_isCovered ? "inherit" : "hidden";//架构更改，这里变异步了，计算完成一次性更改，开销更小
+    Struct_Window_targetWindow.DOMobj_cover.style.opacity = Struct_Window_targetWindow.Bool_isCovered ? "1" : "0";
 }
 
 function /*int*/ queryWindowOverlapStatus(Struct_Window_window1, Struct_Window_window2) {
@@ -642,7 +674,7 @@ function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Wind
         Struct_StdWindowRect_rect1.Int_top - Int_bottom2,
         Struct_StdWindowRect_rect2.Int_top - Int_bottom1);
     if (Int_dx > 0 && Int_dy > 0) { return Int_dx + Int_dy; }
-    return Math.max(Int_dx, Int_dy);
+    return Math.max(Int_dx, Int_dy) - 3;//这里减去3px，对应边框宽度，这样两个窗口间可以重叠最大一个窗口的距离
 }
 
 function /*void*/ updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffectContainer, Int_lastX, Int_lastY, Int_nextX, Int_nextY) {//window背景的运动模糊比较特殊，因为是只有横竖的方格图案，所以不用转换成单一方向再模糊（SVGfilter只支持横纵两个方向的模糊）
@@ -745,6 +777,7 @@ function /*bool*/ isWindowOverlappedByOthers(Struct_Window_targetWindow) {
 }
 
 function /*bool*/ isWindowCoveredByWindow(Struct_Window_targetWindow, Struct_Window_coverWindow) {
+    if (Struct_Window_coverWindow.Bool_isClosed) { return false; }//如果窗口在关闭动画中，则视作无遮挡
     if (queryWindowOverlapStatus(Struct_Window_targetWindow, Struct_Window_coverWindow) >= 0) { return false; }//没重叠,不通过 //进一步提高判断效率
     if ((Struct_Window_coverWindow.Int_indexOfPileIndex < Struct_Window_targetWindow.Int_indexOfPileIndex/*组层级更高,通过*/
         || (Struct_Window_coverWindow.Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex/*组层级一致,组内层级更高,通过*/
