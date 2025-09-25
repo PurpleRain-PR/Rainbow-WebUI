@@ -50,6 +50,15 @@ function /*void*/ initDesktop(/*void*/) {
     DOMobj_windowBaseDragHandle.onpointerdown = function (event) { dragDesktop(DOMobj_windowBaseDragHandle, DOMobj_windowBase, event); };
 }
 
+function /*void*/ preLoadWindowIcon(/*void*/) {
+    let DOMobj_icon = document.createElement("img");
+    DOMobj_icon.setAttribute("src", "./System/window/close.svg");
+    document.head.appendChild(DOMobj_icon);
+    DOMobj_icon = document.createElement("img");
+    DOMobj_icon.setAttribute("src", "./System/window/resize.svg");
+    document.head.appendChild(DOMobj_icon);
+}
+
 function /*void*/ initWindowResizeSynchronizer(/*void*/) {
     ROobj_windowBaseResizeObserver = new ResizeObserver(function (entries) {
         for (let entry of entries) {
@@ -65,13 +74,15 @@ function /*void*/ initWindowResizeSynchronizer(/*void*/) {
     });
 }
 
-function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, Str_title) {
+function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, Str_title, Str_iconURL) {
     //get windowbase //deleted,new method use windowBase as a global variable
     let Struct_Window_newWindow = new Struct_Window();
     Struct_Window_newWindow.Str_title = Str_title;
 
     Int_width = Int_width || 120;
     Int_height = Int_height || 60;
+    Int_left = Int_left - DOMobj_windowBase.offsetLeft + ((innerWidth  - Int_width) >> 1);
+    Int_top = Int_top - DOMobj_windowBase.offsetTop + ((innerHeight  - Int_height) >> 1);
 
     Struct_Window_newWindow.DOMobj_locator = document.createElement("div");//locator
     Struct_Window_newWindow.DOMobj_locator.setAttribute("class", "windowLocator");
@@ -94,8 +105,9 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_title.setAttribute("class", "windowTitle");
     Struct_Window_newWindow.DOMobj_navigator.appendChild(Struct_Window_newWindow.DOMobj_title);
 
-    Struct_Window_newWindow.DOMobj_icon = document.createElement("div");//icon
+    Struct_Window_newWindow.DOMobj_icon = document.createElement("img");//icon
     Struct_Window_newWindow.DOMobj_icon.setAttribute("class", "windowIcon");
+    Struct_Window_newWindow.DOMobj_icon.setAttribute("src", Str_iconURL);
     Struct_Window_newWindow.DOMobj_navigator.appendChild(Struct_Window_newWindow.DOMobj_icon);
 
     Struct_Window_newWindow.DOMobj_dragBox = document.createElement("div");//dragBox

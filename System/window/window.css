@@ -130,6 +130,15 @@
     right: 0;
 }
 
+.windowIcon {
+    position: absolute;
+    display: none;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+}
+
 .windowCover {
     position: absolute;
     top: 0;
@@ -184,8 +193,13 @@
 .closeButtonIcon {
     filter: brightness(0.65);
     transition: transform .15s cubic-bezier(0.1, 1, 0.6, 1),
-        filter .3s cubic-bezier(0.1, 1, 0.6, 1) .12s;
-    }
+    filter .3s cubic-bezier(0.1, 1, 0.6, 1) .12s,
+    rotate .5s cubic-bezier(0.3, 0, 0, 1) .25s;
+}
+
+.maximizedWindow .nav .closeButton .closeButtonIcon{
+    rotate: 90deg;
+}
 
 .closeButton:hover .closeButtonIcon {
     filter: brightness(3);
