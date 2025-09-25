@@ -386,12 +386,12 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
             }
         }
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
-}
-
-function /*void*/ removeWindow(Struct_Window_targetWindow) {
     removeWindowFromGWOT(Struct_Window_targetWindow.Int_handle);
     Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
     ROobj_windowBaseResizeObserver.unobserve(Struct_Window_targetWindow.DOMobj_frame);
+}
+
+function /*void*/ removeWindow(Struct_Window_targetWindow) {
     Struct_Window_targetWindow.DOMobj_locator.remove();//remove from DOM
     Struct_Window_targetWindow = null;//free the memory
 }
