@@ -13,6 +13,7 @@ function /*Struct_Window*/ Struct_Window() {
     this.DOMobj_rotateBase = undefined;
     this.DOMobj_title = undefined;
     this.DOMobj_icon = undefined;
+    this.DOMobj_container = undefined;
     this.Bool_needToBeUpdated = undefined;
     this.Bool_isMaximized = undefined;
     this.Bool_isHidden = undefined;
@@ -96,6 +97,10 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
     Struct_Window_newWindow.DOMobj_frame.setAttribute("class", "window");
     Struct_Window_newWindow.DOMobj_rotateBase.appendChild(Struct_Window_newWindow.DOMobj_frame);
     Struct_Window_newWindow.DOMobj_frame.Struct_Window_thisWindow = Struct_Window_newWindow;//给frame创建到所属窗口的引用，在resize时防止遍历（resizeObserver只能监听DOM元素）
+
+    Struct_Window_newWindow.DOMobj_container = document.createElement("div");//container
+    Struct_Window_newWindow.DOMobj_container.setAttribute("class", "windowContainer");
+    Struct_Window_newWindow.DOMobj_frame.appendChild(Struct_Window_newWindow.DOMobj_container);
 
     Struct_Window_newWindow.DOMobj_navigator = document.createElement("div");//navigator
     Struct_Window_newWindow.DOMobj_navigator.setAttribute("class", "nav");
@@ -386,12 +391,12 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
             }
         }
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
-    removeWindowFromGWOT(Struct_Window_targetWindow.Int_handle);
-    Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
     ROobj_windowBaseResizeObserver.unobserve(Struct_Window_targetWindow.DOMobj_frame);
 }
 
 function /*void*/ removeWindow(Struct_Window_targetWindow) {
+    removeWindowFromGWOT(Struct_Window_targetWindow.Int_handle);
+    Arr_Struct_Window_allWindows.splice(Arr_Struct_Window_allWindows.indexOf(Struct_Window_targetWindow), 1);//remove from array
     Struct_Window_targetWindow.DOMobj_locator.remove();//remove from DOM
     Struct_Window_targetWindow = null;//free the memory
 }
@@ -690,11 +695,13 @@ function /*int*/ calculateWindowOverlapStatus(Struct_Window_window1, Struct_Wind
 }
 
 function /*void*/ updateWindowBackgroundMotionBlur(DOMobj_SVGfilterEffectContainer, Int_lastX, Int_lastY, Int_nextX, Int_nextY) {//window背景的运动模糊比较特殊，因为是只有横竖的方格图案，所以不用转换成单一方向再模糊（SVGfilter只支持横纵两个方向的模糊）
+    if (_B) { return; }//debug config
     DOMobj_SVGfilterEffectContainer.setAttribute("stdDeviation",
         (Math.abs((Int_nextY - Int_lastY) / 2)) + "," + (Math.abs((Int_nextX - Int_lastX) / 2)));//get <feGaussianBlur> and change status
 }
 
 function /*void*/ updateWindowMotionBlur(Struct_Window_targetWindow, DOMobj_SVGfilterEffectContainer, Int_lastX, Int_lastY, Int_nextX, Int_nextY) {//窗口的运动模糊更加泛用化，都是旋转，单一方向模糊，再旋转
+    if (_B) { return; }//debug config
     let Int_dx = Int_nextX - Int_lastX;
     let Int_dy = Int_nextY - Int_lastY;
     let Float_theta = Math.atan2(Int_dy, Int_dx) / Math.PI * 180;
@@ -842,8 +849,14 @@ function /*void*/ applyWindowTitle(Struct_Window_targetWindow) {
 }
 
 //Debug Configs
-var i = initWindow;
-var a = getWindowByHandle;
-var m = moveWindowToTheTopOfItsIndexGroup;
-var r = function (r) { m(a(r)); };
+var _i = initWindow;
+var _a = getWindowByHandle;
+var _m = moveWindowToTheTopOfItsIndexGroup;
+var _r = function (r) { _m(_a(r)); };
+var _M = maximizeWindow;
+var _R = restoreWindow;
+var _c = closeWindow;
+var _A = Arr_Struct_Window_allWindows;
+var _G = Arr_Int_globalWindowOverlapTable;
+var _B = false;
 // for(let p=0;p<10000;p++){i(Math.floor(Math.random()*10000),Math.floor(Math.random()*10000),Math.floor(Math.random()*500),Math.floor(Math.random()*500),Math.random().toString(36).substring(2, 15))}

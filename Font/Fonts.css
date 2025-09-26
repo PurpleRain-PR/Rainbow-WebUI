@@ -3,7 +3,17 @@
     src: url("./JetBrains-Mono/JetBrainsMono-Regular.ttf");
 }
 
+@font-face {
+    font-family: "Maple Mono";
+    src: url("./Maple-Mono/MapleMono-NF-CN-Regular.ttf");
+}
+
+@font-face {
+    font-family: "He Yin";
+    src: url("./He-Yin/ASCH-w3.ttf");
+}
+
 * {
-    font-family: "Jetbrains Mono";
+    font-family: "Jetbrains Mono", "He Yin";
     text-align: center;
 }

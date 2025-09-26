@@ -13,6 +13,7 @@ function /*void*/ suspendScreen(/*void*/) {
             DOMobj_startCover.remove();
             DOMobj_startCover = null;
             clearTimeout(Int_timeoutID);
+            demoWindow();//debug
         }, 250);
         silenceAudioLoop();
     }

@@ -1,0 +1,22 @@
+.windowContainer div {
+    margin: 2em;
+}
+
+.windowContainer div > p,
+.windowContainer div > h1,
+.windowContainer div > h2 {
+    color: #acafb4;
+}
+
+.windowContainer div > p{
+    text-indent: 2em;
+    line-height: 2em;
+    text-align: left;
+}
+
+.windowContainer div > h2{
+    text-align: left;
+}
+
+.windowContainer::-webkit-scrollbar { width: 10px; height: 12px; }  
+.windowContainer::-webkit-scrollbar-thumb { background: #333436; border-radius: 0; }
