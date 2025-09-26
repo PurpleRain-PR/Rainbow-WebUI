@@ -856,6 +856,7 @@ var _r = function (r) { _m(_a(r)); };
 var _M = maximizeWindow;
 var _R = restoreWindow;
 var _c = closeWindow;
+var _t = applyWindowTitle;
 var _A = Arr_Struct_Window_allWindows;
 var _G = Arr_Int_globalWindowOverlapTable;
 var _B = false;
