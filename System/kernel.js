@@ -9,8 +9,8 @@ function /*int*/ systemMain() {
     preLoadWindowIcon();
     initWindowResizeSynchronizer();
     initGlobalFlags();
-
-    newWindowButton();//debug
+    loadPlugin("onStart");
+    // newWindowButton();//debug
 
     //while (true) {
     //离谱,死循环会卡死解释器,得用setinterval

@@ -1,0 +1,9 @@
+{
+    "onStart":[
+        "newWindowButton"
+    ],
+    "onUnlock":[
+        "demoWindow"
+    ],
+    "sleep":[]
+}

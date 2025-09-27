@@ -198,6 +198,12 @@ function /*Struct_Window*/ initWindow(Int_left, Int_top, Int_width, Int_height, 
 }//2024.4.2
 
 function /*void*/ asyncUpdateAllWindow() {
+
+    if (Arr_Struct_Window_allWindows.length === 0) return;//没有窗口要操作
+    if (Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isClosed && Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Float_timeStamp < Float_estiatedNow) {
+        removeWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
+    }//处理窗口关闭必须在最前面执行，这样接下来对AllWindows的非0检查和遍历数组的越界剔除才能正常进行
+
     //高占用事件启动,暂停更新
     if (Bool_suspendAsyncUpdate || Arr_Struct_Window_allWindows.length === 0) return;//没有窗口要操作
     //两个过滤合并了,但优先顺序不变,用逻辑短路,减少if的个数,编译更快
@@ -206,9 +212,7 @@ function /*void*/ asyncUpdateAllWindow() {
     if (Int_indexOfWindowToBeAsyncUpdated >= Arr_Struct_Window_allWindows.length)
         Int_indexOfWindowToBeAsyncUpdated = 0;//循环扫描整个表
 
-    if (Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isClosed && Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Float_timeStamp < Float_estiatedNow) {
-        removeWindow(Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated]);
-    }
+
     //处理系统内部更改
     //剔除就放在这里了
     Arr_Struct_Window_allWindows[Int_indexOfWindowToBeAsyncUpdated].Bool_isHidden =
@@ -385,9 +389,9 @@ function /*void*/ closeWindow(Struct_Window_targetWindow) {
         if (Arr_Struct_Window_allWindows[Int_i].Int_indexOfPileIndex === Struct_Window_targetWindow.Int_indexOfPileIndex) {
             if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex >= Struct_Window_targetWindow.Int_pileIndex) {
                 Arr_Struct_Window_allWindows[Int_i].Int_pileIndex--;//adjust the index
-                if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
-                    uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//uncover the new top window
-                }
+                // if (Arr_Struct_Window_allWindows[Int_i].Int_pileIndex === 1) {
+                //     uncoverWindow(Arr_Struct_Window_allWindows[Int_i]);//uncover the new top window
+                // }
             }
         }
     }//pileIndex display unfinish -4.7 By Gevin //finished by ych 2024.4.14
